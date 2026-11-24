@@ -1,88 +1,104 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Odiscount
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application unifiée Laravel 12, hébergée dans `odiscount_backend`, avec un site public et un espace d’administration. Le dossier `odiscount_frontend` est resté séparé et n’a pas été modifié.
 
-## About Laravel
+## Prérequis
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.2 ou supérieur avec PDO MySQL
+- Composer
+- MySQL 8+ ou MariaDB compatible
+- Node.js/npm uniquement si les ressources Vite de développement sont nécessaires
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Interfaces
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Site public
 
-## Authentification et rôles
+- `/` : accueil et catégories actives
+- `/categories/{slug}` : partenaires, réductions et localisations d’une catégorie active
+- Vues Blade : `resources/views/front/`
+- Routes nommées : `front.home`, `front.categories.show`
+- CSS et JavaScript : `public/assets/front/css/style.css`, `public/assets/front/js/script.js`
 
-L'authentification web utilise les comptes de la table `users`. L'API utilise Laravel Sanctum avec des jetons Bearer. Les migrations ajoutent `is_active` à `users`, la table des jetons personnels et les tables de Spatie Permission.
+Le site public lit directement les modèles Eloquent et la base MySQL par défaut. Il n’utilise pas d’API HTTP entre les deux interfaces.
 
-Après configuration de la base du backend, appliquer les migrations puis créer les rôles sans leur attribuer de permissions :
+### Administration
+
+- `/admin/login` : connexion par session
+- `/admin` : tableau de bord
+- `/admin/categories` : catégories et visibilité
+- `/admin/partners` : recherche, filtre et pagination des partenaires
+- `/admin/partners/create` : création d’un partenaire
+- Vues Blade : `resources/views/admin/`
+- Routes : `routes/admin.php`, chargées avec le middleware web
+- CSS et JavaScript : `public/assets/admin/css/admin.css`, `public/assets/admin/js/admin.js`
+
+Les contrôles de session, les rôles Spatie (`Admin`, `User`, `Master`) et le middleware `EnsureUserIsActive` sont conservés. Les catégories et partenaires sont administrés dans le même schéma MySQL que celui lu par le site public. Une création de partenaire dans l’administration est immédiatement disponible sur la page publique de sa catégorie.
+
+## Base de données
+
+Configurer `.env` avec les paramètres utilisés localement :
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=odiscount_new
+DB_USERNAME=root
+DB_PASSWORD=
+
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+```
+
+Les modèles métier utilisent uniquement la connexion par défaut. Les tables métier sont `categories`, `partenaires`, `villes` et `communes`. Les migrations de création correspondantes vérifient `Schema::hasTable` avant toute création et ne suppriment pas ces tables lors d’un rollback. Les migrations Laravel, utilisateurs, sessions, cache, queue et rôles sont également dans `database/migrations`.
+
+**La base existante fait foi.** Vérifier l’état du schéma et des migrations avant d’exécuter une migration sur une base partagée. Ne jamais utiliser `migrate:fresh`, `migrate:refresh` ou `db:wipe` sur `odiscount_new`.
+
+## Images et assets
+
+Le dossier d’images commun est `public/images/` :
+
+- `public/images/categories/{nom_fichier}` pour les images de catégorie
+- `public/images/partenaires/{nom_fichier}` pour les images de partenaire
+
+Les valeurs d’image conservées en base sont des noms de fichiers ; les modèles `Category` et `Partenaire` exposent l’accesseur `image_url` qui construit leurs URL publiques. Le formulaire actuel de création de partenaire ne téléverse pas d’image : il faut que les fichiers et leurs noms soient présents dans le dossier partagé et la base.
+
+Les styles et scripts des deux interfaces restent séparés sous `public/assets/front/` et `public/assets/admin/`. Ces pages utilisent directement ces fichiers statiques ; elles ne dépendent pas du build Vite/Tailwind.
+
+## Installation et lancement
+
+Depuis `odiscount_backend` :
 
 ```sh
-php artisan migrate
-php artisan db:seed --class=RoleSeeder
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Les rôles disponibles sont `Admin`, `User` et `Master`. Le seeder crée également les comptes de test suivants, tous actifs et avec le mot de passe `password` :
+Renseigner ensuite la base dans `.env` et vérifier préalablement que le schéma `odiscount_new` et les migrations correspondent aux données existantes. Pour le développement :
 
-| E-mail | Rôle |
-|---|---|
-| `admin@example.com` | `Admin` |
-| `user@example.com` | `User` |
-| `master@example.com` | `Master` |
-
-Ces comptes sont réservés au développement et ne doivent pas être conservés en production. Pour attribuer un rôle à un compte existant, utiliser le code applicatif ou Artisan Tinker :
-
-```php
-App\Models\User::where('email', 'admin@example.com')->firstOrFail()->assignRole('Master');
+```sh
+php artisan serve
 ```
 
-La connexion de l'interface se fait sur `/admin/login`. Pour l'API, envoyer `POST /api/login` avec `email`, `password` et éventuellement `device_name`, puis transmettre le jeton retourné dans l'en-tête `Authorization: Bearer …`. `GET /api/user` retourne le compte authentifié et `POST /api/logout` révoque le jeton courant. `PATCH /api/users/{id}/status` permet aux rôles `Admin` et `Master` de modifier `is_active`; la désactivation bloque la connexion et révoque les jetons du compte. Les permissions Spatie restent à définir.
+Les comptes et mots de passe créés par `RoleSeeder` (`admin@example.com`, `user@example.com`, `master@example.com`, mot de passe `password`) sont des identifiants de développement uniquement ; ne pas les conserver en production.
 
-La page `/admin/partners` lit les partenaires et leurs relations catégorie, ville et commune depuis la connexion `odiscount`. Elle liste aussi les partenaires rattachés à une catégorie inactive et permet un filtrage par catégorie ou par texte.
+## Vérification
 
-## Learning Laravel
+```sh
+php artisan optimize:clear
+php artisan route:list
+php artisan test
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Les tests PHPUnit isolent leur base avec SQLite en mémoire ; cette configuration est réservée aux tests et ne change pas la connexion MySQL de l’application.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Déploiement
 
-## Laravel Sponsors
+- Configurer le document root du serveur web sur `odiscount_backend/public/`.
+- Installer les dépendances de production avec `composer install --no-dev --optimize-autoloader`.
+- Vérifier les variables `.env`, puis exécuter `php artisan config:cache`.
+- Ne lancer aucune commande destructive sur la base de production.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+L’API a été retirée : aucune route `/api/*` n’est exposée et Sanctum n’est plus utilisé. La migration historique de `personal_access_tokens` est conservée ; aucune table existante n’a été supprimée.

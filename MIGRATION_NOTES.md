@@ -34,7 +34,7 @@
 - [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées côté public et dans une donnée non visuelle admin. L’admin ne téléverse pas encore d’images ; cette fonctionnalité n’a pas été ajoutée afin de préserver le formulaire.
 - [x] Étape 9 : routes API retirées de l’application et de `bootstrap/app.php`, tests API supprimés, trait et dépendance Sanctum retirés. La migration de `personal_access_tokens` est conservée et aucune table n’est supprimée.
 - [x] Étape 10 : `optimize:clear`, `route:list`, tests (19 réussis, 118 assertions) et smoke test HTTP complet réussis sur une base SQLite temporaire isolée, supprimée après usage. La connexion locale à MySQL `127.0.0.1:3306` a été refusée ; le schéma et les pages sur `odiscount_new` n’ont donc pas pu être vérifiés directement. Aucune commande de migration n’a visé cette base.
-- [ ] Étape 11 : documentation finale.
+- [x] Étape 11 : README remplacé par la documentation de l’application unifiée, des deux interfaces, de la configuration MySQL, des images et des consignes de déploiement.
 
 ## Vérification de l’accès MySQL
 
