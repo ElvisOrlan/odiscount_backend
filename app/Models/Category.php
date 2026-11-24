@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $connection = 'odiscount';
-
     protected $table = 'categories';
 
     public function partenaires(): HasMany

@@ -25,7 +25,7 @@
 ## Journal des étapes
 
 - [x] Étape 1 : audit rapide ; branche créée et décisions consignées.
-- [ ] Étape 2 : connexion MySQL unique et configuration de sessions/cache/queues.
+- [x] Étape 2 : connexion MySQL unique, `.env` et `.env.example` alignés sur `odiscount_new` ; sessions, cache et queues conservent leurs pilotes `database` et utilisent la connexion par défaut.
 - [ ] Étape 3 : dépendances frontend nécessaires intégrées au backend.
 - [ ] Étape 4 : modèles fusionnés et migrations de production préservées.
 - [ ] Étape 5 : interface publique intégrée.

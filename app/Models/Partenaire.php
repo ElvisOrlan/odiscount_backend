@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Partenaire extends Model
 {
-    protected $connection = 'odiscount';
-
     protected $table = 'partenaires';
 
     public function categorie(): BelongsTo
