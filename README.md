@@ -21,6 +21,35 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Authentification et rôles
+
+L'authentification web utilise les comptes de la table `users`. L'API utilise Laravel Sanctum avec des jetons Bearer. Les migrations ajoutent `is_active` à `users`, la table des jetons personnels et les tables de Spatie Permission.
+
+Après configuration de la base du backend, appliquer les migrations puis créer les rôles sans leur attribuer de permissions :
+
+```sh
+php artisan migrate
+php artisan db:seed --class=RoleSeeder
+```
+
+Les rôles disponibles sont `Admin`, `User` et `Master`. Le seeder crée également les comptes de test suivants, tous actifs et avec le mot de passe `password` :
+
+| E-mail | Rôle |
+|---|---|
+| `admin@example.com` | `Admin` |
+| `user@example.com` | `User` |
+| `master@example.com` | `Master` |
+
+Ces comptes sont réservés au développement et ne doivent pas être conservés en production. Pour attribuer un rôle à un compte existant, utiliser le code applicatif ou Artisan Tinker :
+
+```php
+App\Models\User::where('email', 'admin@example.com')->firstOrFail()->assignRole('Master');
+```
+
+La connexion de l'interface se fait sur `/admin/login`. Pour l'API, envoyer `POST /api/login` avec `email`, `password` et éventuellement `device_name`, puis transmettre le jeton retourné dans l'en-tête `Authorization: Bearer …`. `GET /api/user` retourne le compte authentifié et `POST /api/logout` révoque le jeton courant. `PATCH /api/users/{id}/status` permet aux rôles `Admin` et `Master` de modifier `is_active`; la désactivation bloque la connexion et révoque les jetons du compte. Les permissions Spatie restent à définir.
+
+La page `/admin/partners` lit les partenaires et leurs relations catégorie, ville et commune depuis la connexion `odiscount`. Elle liste aussi les partenaires rattachés à une catégorie inactive et permet un filtrage par catégorie ou par texte.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

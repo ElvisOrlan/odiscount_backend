@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>odiscount – Administration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f4f1;--panel:#fff;--ink:#14241c;--mute:#5d6f65;--line:#dce5df;--green:#0e5a3d;--green2:#0a4630;--soft:#e3efe8;--orange:#e8830c;--red:#b3261e;--side:#0c2f21;--r:10px}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1612;--panel:#16221b;--ink:#e8f0eb;--mute:#93a69b;--line:#26382e;--green:#3fb381;--green2:#2f9a6c;--soft:#1d3329;--side:#09130e;--red:#f2776f}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.5 "Public Sans",system-ui,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);display:flex}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.side{width:230px;flex:none;background:var(--side);color:#dbe8e0;padding:22px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.brand{font-weight:800;font-size:22px;letter-spacing:-.02em;color:#fff;padding:0 10px 18px}
+.brand b{color:var(--orange)}
+.brand small{display:block;font-weight:500;font-size:12px;color:#8fb09f;letter-spacing:0}
+.nav{display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:10px 12px;border-radius:8px;color:inherit;font-weight:500}
+.nav:hover{background:rgba(255,255,255,.07)}
+.nav[aria-current=page]{background:#fff;color:var(--green2);font-weight:700}
+.nav svg{width:18px;height:18px;flex:none}
+.side .foot{margin-top:auto;font-size:12px;color:#8fb09f;padding:0 10px}
+main{flex:1;min-width:0;padding:28px clamp(16px,3vw,40px) 60px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{margin:0;font-size:28px;letter-spacing:-.02em;font-weight:800}
+.top p{margin:2px 0 0;color:var(--mute)}
+.btn{border:1px solid var(--line);background:var(--panel);padding:9px 16px;border-radius:8px;font-weight:600}
+.btn:hover{border-color:var(--green)}
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+.btn.pri:hover{background:var(--green2)}
+.btn.dng{color:var(--red)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.view{display:none}.view.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.stat b{display:block;font-size:30px;font-weight:800;letter-spacing:-.02em}
+.stat span{color:var(--mute);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.card h2{margin:0 0 14px;font-size:17px}
+.bar{display:grid;grid-template-columns:130px 1fr 28px;gap:10px;align-items:center;margin:8px 0;font-size:14px}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--green);min-width:3px}
+.bar em{font-style:normal;text-align:right;color:var(--mute)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.tools input,.tools select{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.tools input{flex:1;min-width:200px}
+.tbl{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.wrap{overflow-x:auto;border-radius:var(--r)}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-size:13px;color:var(--mute);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td .act{display:flex;gap:6px;justify-content:flex-end}
+.who{display:flex;align-items:center;gap:12px}
+.av{width:38px;height:38px;border-radius:9px;background:var(--soft);color:var(--green);font-weight:800;display:grid;place-items:center;flex:none;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.who small{display:block;color:var(--mute)}
+.disc{background:var(--orange);color:#fff;font-weight:800;font-size:13px;padding:2px 8px;border-radius:6px}
+code{background:var(--bg);padding:2px 6px;border-radius:5px;font-size:13px}
+.sw{position:relative;width:38px;height:22px;border-radius:11px;border:0;background:#b8c6bd;padding:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw[aria-checked=true]{background:var(--green)}
+.sw[aria-checked=true]::after{transform:translateX(16px)}
+.empty{padding:36px;text-align:center;color:var(--mute)}
+#scrim{position:fixed;inset:0;background:rgba(8,20,14,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+#scrim.on{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,100%);background:var(--panel);z-index:11;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.2)}
+#drawer.on{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
+.dh h2{margin:0;font-size:20px}
+.db{flex:1;overflow:auto;padding:20px 24px}
+.df{padding:14px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.x{border:0;background:none;font-size:26px;line-height:1;color:var(--mute)}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+.fld input:not([type=checkbox]):not([type=file]),.fld select,.fld textarea{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.fld textarea{min-height:70px;resize:vertical}
+.fld .hint{font-size:12.5px;color:var(--mute);margin-top:3px}
+.fld .err{font-size:12.5px;color:var(--red);margin-top:3px;display:none}
+.fld.bad input,.fld.bad select{border-color:var(--red)}
+.fld.bad .err{display:block}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600}
+.prev{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
+.prev h3{margin:0 0 10px;font-size:14px;color:var(--mute);font-weight:600}
+.pc{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.pc .ph{height:120px;background:var(--soft);display:grid;place-items:center;font-size:38px;font-weight:800;color:var(--green);background-size:cover;background-position:center}
+.pc .disc{position:absolute;top:10px;right:10px;font-size:15px}
+.pc .bd{padding:12px 14px;font-size:13.5px}
+.pc h4{margin:0 0 2px;font-size:16px;text-transform:uppercase}
+.pc p{margin:2px 0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:8px;opacity:0;pointer-events:none;transition:.2s;z-index:30;font-weight:600}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:22px;max-width:380px}
+dialog::backdrop{background:rgba(8,20,14,.5)}
+dialog p{margin:0 0 18px}
+dialog .r{display:flex;gap:10px;justify-content:flex-end}
+.burger{display:none}
+@media (max-width:820px){
+body{display:block}
+.side{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px}
+.brand{padding:0 8px 0 4px}.brand small,.side .foot{display:none}
+.nav{padding:8px 10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<aside class="side">
+  <div class="brand">o<b>discount</b><small>Espace administration</small></div>
+  <button class="nav" data-go="dash" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Tableau de bord</button>
+  <button class="nav" data-go="cats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Catégories</button>
+  <button class="nav" data-go="parts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"/></svg>Partenaires</button>
+  <div class="foot">Maquette – les données restent dans la page et sont perdues au rechargement.</div>
+</aside>
+
+<main>
+  <div class="top">
+    <div><h1 id="title">Tableau de bord</h1><p id="sub"></p></div>
+    <button class="btn pri" id="addBtn" hidden></button>
+  </div>
+
+  <section class="view on" id="v-dash">
+    <div class="stats" id="stats"></div>
+    <div class="card"><h2>Partenaires par catégorie</h2><div id="bars"></div></div>
+  </section>
+
+  <section class="view" id="v-cats">
+    <div class="wrap"><table class="tbl">
+      <thead><tr><th>Catégorie</th><th>Adresse publique</th><th>Partenaires</th><th>Ordre</th><th>Visible</th><th></th></tr></thead>
+      <tbody id="catRows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="view" id="v-parts">
+    <div class="tools">
+      <input type="search" id="q" placeholder="Rechercher un nom, un quartier, un gérant" aria-label="Rechercher">
+      <select id="fc" aria-label="Filtrer par catégorie"></select>
+      <select id="fs" aria-label="Filtrer par statut"><option value="">Tous les statuts</option><option value="1">Visibles</option><option value="0">Masqués</option></select>
+    </div>
+    <div class="wrap"><table class="tbl">
+      <thead><tr><th>Partenaire</th><th>Catégorie</th><th>Réduction</th><th>Gérant</th><th>Visible</th><th></th></tr></thead>
+      <tbody id="partRows"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<div id="scrim"></div>
+<aside id="drawer" role="dialog" aria-modal="true" aria-labelledby="dt">
+  <div class="dh"><h2 id="dt"></h2><button class="x" id="closeD" aria-label="Fermer">×</button></div>
+  <div class="db">
+    <form id="fCat" novalidate hidden>
+      <div class="fld" data-f="name"><label for="cName">Nom de la catégorie</label><input id="cName" autocomplete="off" placeholder="Ex. Pharmacies"><div class="err">Saisissez un nom.</div></div>
+      <div class="fld" data-f="slug"><label for="cSlug">Adresse dans l’URL</label><input id="cSlug" autocomplete="off"><div class="hint">odiscount…/categories/<b id="slugPrev"></b></div><div class="err">Adresse invalide ou déjà utilisée.</div></div>
+      <div class="row">
+        <div class="fld"><label for="cOrder">Position dans le menu</label><input id="cOrder" type="number" min="1" value="1"></div>
+        <div class="fld"><label for="cImg">Image de la vignette</label><input id="cImg" type="file" accept="image/*"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="cOn" checked> Afficher sur le site</label>
+    </form>
+
+    <form id="fPart" novalidate hidden>
+      <div class="fld" data-f="name"><label for="pName">Nom du partenaire</label><input id="pName" autocomplete="off"><div class="err">Saisissez un nom.</div></div>
+      <div class="row">
+        <div class="fld" data-f="cat"><label for="pCat">Catégorie</label><select id="pCat"></select><div class="err">Choisissez une catégorie.</div></div>
+        <div class="fld" data-f="disc"><label for="pDisc">Réduction (%)</label><input id="pDisc" type="number" min="0" max="100" value="10"><div class="err">Entre 0 et 100.</div></div>
+      </div>
+      <div class="fld" data-f="loc"><label for="pLoc">Localisation</label><input id="pLoc" autocomplete="off" placeholder="Ex. Cocody Angré 7e tranche"><div class="err">Indiquez le quartier.</div></div>
+      <div class="fld"><label for="pOffer">Offre</label><textarea id="pOffer" placeholder="Ex. -1000 F sur la grande pizza"></textarea></div>
+      <div class="row">
+        <div class="fld" data-f="tel"><label for="pTel">Contact du partenaire</label><input id="pTel" inputmode="tel" placeholder="07 00 00 00 00"><div class="err">10 chiffres attendus.</div></div>
+        <div class="fld" data-f="mtel"><label for="pMTel">Contact du gérant</label><input id="pMTel" inputmode="tel" placeholder="05 00 00 00 00"><div class="err">10 chiffres attendus.</div></div>
+      </div>
+      <div class="fld"><label for="pMan">Gérant</label><input id="pMan" autocomplete="off"></div>
+      <div class="fld"><label for="pImg">Photo</label><input id="pImg" type="file" accept="image/*"></div>
+      <label class="chk"><input type="checkbox" id="pOn" checked> Afficher sur le site</label>
+      <div class="prev"><h3>Aperçu sur le site</h3>
+        <div class="pc"><div class="ph" id="pvPh"></div><span class="disc" id="pvD"></span>
+        <div class="bd"><h4 id="pvN"></h4><p id="pvO"></p><p><b>Localisation :</b> <span id="pvL"></span></p><p><b>Contacts :</b> <span id="pvT"></span></p><p><b>Gérant :</b> <span id="pvM"></span></p></div></div>
+      </div>
+    </form>
+  </div>
+  <div class="df"><button class="btn" id="cancelD">Annuler</button><button class="btn pri" id="saveD">Enregistrer</button></div>
+</aside>
+
+<dialog id="dlg"><p id="dlgMsg"></p><div class="r"><button class="btn" id="dlgNo">Annuler</button><button class="btn dng" id="dlgYes">Supprimer</button></div></dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+let cats = [
+ ["Resto","restaurants-patisseries"],["Auto","auto-ecole"],["Spa-Fitness","spa-fitness"],["Education","education"],["Hôtels","hotels"],
+ ["Santé","sante"],["Modes","mode-accessoires"],["Optique","optique"],["Divers","prestation-divers"],["Métiers","immobilier"]
+].map((c,i)=>({id:i+1,name:c[0],slug:c[1],order:i+1,on:true,img:""}));
+let parts = [
+ [1,"Restaurant sénégalais Chez Astou","Cocody",15,"Sur tout","Gueye Astou"],
+ [1,"Chez Hassan","Yopougon Kenya",10,"-1000 F sur la grande pizza","Ali Saltan"],
+ [1,"Le Roi des gâteaux","Yopougon Béago",10,"Sur tout","Michael Songbo"],
+ [1,"Samyraty Restaurant","Yopougon Millionnaire",25,"Sur les repas","Akré Claudia"],
+ [1,"Roi du poulet","Cocody Angré 7e tranche",5,"2 chawarma + 1 jus","Mr Ali"],
+ [10,"Plombier professionnel","Yopougon Mosquée Maroc",0,"Service rapide","Hamed Koné"],
+ [10,"SK Myria Beauté","Angré Château",10,"Sur les locks","Ouattara Aminata"],
+ [6,"Clinique Les Palmiers","Marcory",15,"Sur la consultation","Dr Yao"]
+].map((p,i)=>({id:i+1,cat:p[0],name:p[1],loc:p[2],disc:p[3],offer:p[4],man:p[5],tel:"0700000"+String(i+10).padStart(3,"0"),mtel:"0500000"+String(i+10).padStart(3,"0"),on:i!==7,img:""}));
+let nextCat = 11, nextPart = 9, mode = null, editId = null, view = "dash", imgData = "";
+
+const slugify = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const catName = id => (cats.find(c=>c.id==id)||{}).name || "–";
+const count = id => parts.filter(p=>p.cat==id).length;
+const fmtTel = t => t.replace(/\D/g,"").replace(/(\d{2})(?=\d)/g,"$1 ").trim();
+const avatar = o => `<div class="av">${o.img?`<img src="${o.img}" alt="">`:esc((o.name||"?")[0].toUpperCase())}</div>`;
+const toast = m => { const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("on"),2200); };
+
+const titles = {
+ dash:["Tableau de bord","Vue d’ensemble du catalogue de partenaires.",""],
+ cats:["Catégories","Les rubriques du menu et de la page d’accueil.","Nouvelle catégorie"],
+ parts:["Partenaires","Les fiches affichées dans chaque catégorie.","Nouveau partenaire"]
+};
+function go(v){
+ view=v;
+ $$(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));
+ $$(".nav").forEach(b=>b.toggleAttribute("aria-current",b.dataset.go===v)); $$(".nav").forEach(b=>{ if(b.dataset.go===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+ const t=titles[v]; $("#title").textContent=t[0]; $("#sub").textContent=t[1];
+ const a=$("#addBtn"); a.hidden=!t[2]; a.textContent="+ "+t[2];
+ render();
+}
+$$(".nav").forEach(b=>b.onclick=()=>go(b.dataset.go));
+$("#addBtn").onclick=()=>openDrawer(view==="cats"?"cat":"part");
+
+function render(){
+ if(view==="dash"){
+  const act=parts.filter(p=>p.on), avg=act.length?Math.round(act.reduce((s,p)=>s+p.disc,0)/act.length):0;
+  const vide=cats.filter(c=>!count(c.id)).length;
+  $("#stats").innerHTML=[[act.length,"partenaires visibles"],[cats.filter(c=>c.on).length,"catégories visibles"],[avg+" %","réduction moyenne"],[vide,"catégories sans partenaire"]].map(s=>`<div class="stat"><b>${s[0]}</b><span>${s[1]}</span></div>`).join("");
+  const max=Math.max(1,...cats.map(c=>count(c.id)));
+  $("#bars").innerHTML=cats.slice().sort((a,b)=>a.order-b.order).map(c=>`<div class="bar"><span>${esc(c.name)}</span><i style="width:${count(c.id)/max*100}%"></i><em>${count(c.id)}</em></div>`).join("");
+ }
+ if(view==="cats"){
+  $("#catRows").innerHTML=cats.slice().sort((a,b)=>a.order-b.order).map(c=>`<tr>
+   <td><div class="who">${avatar(c)}<b>${esc(c.name)}</b></div></td>
+   <td><code>/categories/${esc(c.slug)}</code></td><td>${count(c.id)}</td><td>${c.order}</td>
+   <td><button class="sw" role="switch" aria-checked="${c.on}" aria-label="Visible" data-t="cat" data-id="${c.id}"></button></td>
+   <td><div class="act"><button class="btn sm" data-e="cat" data-id="${c.id}">Modifier</button><button class="btn sm dng" data-d="cat" data-id="${c.id}">Supprimer</button></div></td></tr>`).join("");
+ }
+ if(view==="parts"){
+  const fc=$("#fc"), cur=fc.value;
+  fc.innerHTML='<option value="">Toutes les catégories</option>'+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(""); fc.value=cur;
+  const q=$("#q").value.trim().toLowerCase(), s=$("#fs").value;
+  const list=parts.filter(p=>(!fc.value||p.cat==fc.value)&&(s===""||String(+p.on)===s)&&(!q||[p.name,p.loc,p.man].join(" ").toLowerCase().includes(q)));
+  $("#partRows").innerHTML=list.length?list.map(p=>`<tr>
+   <td><div class="who">${avatar(p)}<div><b>${esc(p.name)}</b><small>${esc(p.loc)}</small></div></div></td>
+   <td>${esc(catName(p.cat))}</td><td><span class="disc">-${p.disc}%</span></td><td>${esc(p.man||"–")}</td>
+   <td><button class="sw" role="switch" aria-checked="${p.on}" aria-label="Visible" data-t="part" data-id="${p.id}"></button></td>
+   <td><div class="act"><button class="btn sm" data-e="part" data-id="${p.id}">Modifier</button><button class="btn sm dng" data-d="part" data-id="${p.id}">Supprimer</button></div></td></tr>`).join("")
+   :`<tr><td colspan="6" class="empty">Aucun partenaire ne correspond. Modifiez la recherche ou ajoutez un partenaire.</td></tr>`;
+ }
+}
+["q","fc","fs"].forEach(id=>$("#"+id).addEventListener("input",render));
+
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button"); if(!b) return;
+ const id=+b.dataset.id, arr=b.dataset.t==="cat"||b.dataset.e==="cat"||b.dataset.d==="cat"?cats:parts;
+ if(b.dataset.t){ const o=arr.find(x=>x.id===id); o.on=!o.on; toast(o.on?"Affiché sur le site":"Masqué du site"); render(); }
+ if(b.dataset.e) openDrawer(b.dataset.e,id);
+ if(b.dataset.d) askDelete(b.dataset.d,id);
+});
+
+/* Tiroir */
+function openDrawer(kind,id=null){
+ mode=kind; editId=id; imgData="";
+ $("#fCat").hidden=kind!=="cat"; $("#fPart").hidden=kind!=="part";
+ $$(".fld").forEach(f=>f.classList.remove("bad"));
+ if(kind==="cat"){
+  const c=id?cats.find(x=>x.id===id):{name:"",slug:"",order:cats.length+1,on:true,img:""};
+  $("#dt").textContent=id?"Modifier la catégorie":"Nouvelle catégorie";
+  $("#cName").value=c.name; $("#cSlug").value=c.slug; $("#cSlug").dataset.touched=id?"1":""; $("#cOrder").value=c.order; $("#cOn").checked=c.on; $("#cImg").value=""; imgData=c.img; slugPrev();
+ } else {
+  const p=id?parts.find(x=>x.id===id):{name:"",cat:"",loc:"",disc:10,offer:"",man:"",tel:"",mtel:"",on:true,img:""};
+  $("#dt").textContent=id?"Modifier le partenaire":"Nouveau partenaire";
+  $("#pCat").innerHTML='<option value="">Choisir…</option>'+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  $("#pName").value=p.name; $("#pCat").value=p.cat; $("#pLoc").value=p.loc; $("#pDisc").value=p.disc; $("#pOffer").value=p.offer; $("#pMan").value=p.man; $("#pTel").value=p.tel; $("#pMTel").value=p.mtel; $("#pOn").checked=p.on; $("#pImg").value=""; imgData=p.img; preview();
+ }
+ $("#scrim").classList.add("on"); $("#drawer").classList.add("on");
+ setTimeout(()=>$(kind==="cat"?"#cName":"#pName").focus(),250);
+}
+function closeDrawer(){ $("#scrim").classList.remove("on"); $("#drawer").classList.remove("on"); mode=null; }
+["scrim","closeD","cancelD"].forEach(i=>$("#"+i).onclick=closeDrawer);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&mode&&!$("#dlg").open) closeDrawer(); });
+
+function slugPrev(){ $("#slugPrev").textContent=$("#cSlug").value||"…"; }
+$("#cName").addEventListener("input",()=>{ if(!$("#cSlug").dataset.touched) $("#cSlug").value=slugify($("#cName").value); slugPrev(); });
+$("#cSlug").addEventListener("input",()=>{ $("#cSlug").dataset.touched="1"; slugPrev(); });
+
+function readImg(input,cb){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ imgData=r.result; cb&&cb(); }; r.readAsDataURL(f); }
+$("#cImg").onchange=e=>readImg(e.target);
+$("#pImg").onchange=e=>readImg(e.target,preview);
+
+function preview(){
+ const n=$("#pName").value||"Nom du partenaire", d=$("#pDisc").value||0;
+ $("#pvN").textContent=n; $("#pvD").textContent="-"+d+"%"; $("#pvO").textContent=$("#pOffer").value||"Votre offre apparaît ici";
+ $("#pvL").textContent=$("#pLoc").value||"–"; $("#pvT").textContent=fmtTel($("#pTel").value)||"–"; $("#pvM").textContent=$("#pMan").value||"–";
+ const ph=$("#pvPh"); ph.style.backgroundImage=imgData?`url(${imgData})`:""; ph.textContent=imgData?"":n[0].toUpperCase();
+}
+$("#fPart").addEventListener("input",preview);
+
+function check(form,rules){
+ let ok=true;
+ rules.forEach(([sel,test])=>{ const el=$(sel), f=el.closest(".fld"), good=test(el.value.trim()); f.classList.toggle("bad",!good); if(!good&&ok){ el.focus(); } ok=ok&&good; });
+ return ok;
+}
+const tel10 = v => v===""||v.replace(/\D/g,"").length===10;
+
+$("#saveD").onclick=()=>{
+ if(mode==="cat"){
+  const slug=slugify($("#cSlug").value);
+  if(!check("#fCat",[["#cName",v=>v.length>0],["#cSlug",()=>slug&&!cats.some(c=>c.slug===slug&&c.id!==editId)]])) return;
+  const o={name:$("#cName").value.trim(),slug,order:+$("#cOrder").value||1,on:$("#cOn").checked,img:imgData};
+  if(editId) Object.assign(cats.find(c=>c.id===editId),o); else cats.push({id:nextCat++,...o});
+  toast(editId?"Catégorie modifiée":"Catégorie créée");
+ } else if(mode==="part"){
+  if(!check("#fPart",[["#pName",v=>v.length>0],["#pCat",v=>v!==""],["#pDisc",v=>v!==""&&+v>=0&&+v<=100],["#pLoc",v=>v.length>0],["#pTel",v=>v!==""&&tel10(v)],["#pMTel",tel10]])) return;
+  const o={name:$("#pName").value.trim(),cat:+$("#pCat").value,loc:$("#pLoc").value.trim(),disc:+$("#pDisc").value,offer:$("#pOffer").value.trim(),man:$("#pMan").value.trim(),tel:$("#pTel").value.replace(/\D/g,""),mtel:$("#pMTel").value.replace(/\D/g,""),on:$("#pOn").checked,img:imgData};
+  if(editId) Object.assign(parts.find(p=>p.id===editId),o); else parts.unshift({id:nextPart++,...o});
+  toast(editId?"Partenaire modifié":"Partenaire créé");
+ }
+ closeDrawer(); render();
+};
+
+/* Suppression */
+let pending=null;
+function askDelete(kind,id){
+ if(kind==="cat"&&count(id)){ toast("Déplacez ou supprimez d’abord les "+count(id)+" partenaires de cette catégorie"); return; }
+ const o=(kind==="cat"?cats:parts).find(x=>x.id===id); pending=[kind,id];
+ $("#dlgMsg").textContent=`Supprimer « ${o.name} » ? Cette action est définitive.`; $("#dlg").showModal();
+}
+$("#dlgNo").onclick=()=>$("#dlg").close();
+$("#dlgYes").onclick=()=>{
+ const [k,id]=pending;
+ if(k==="cat") cats=cats.filter(c=>c.id!==id); else parts=parts.filter(p=>p.id!==id);
+ $("#dlg").close(); toast(k==="cat"?"Catégorie supprimée":"Partenaire supprimé"); render();
+};
+
+go("dash");
+</script>
+</body>
+</html>
