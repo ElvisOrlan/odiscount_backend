@@ -29,7 +29,7 @@
 - [x] Étape 3 : les dépendances Composer et npm utiles au frontend étaient déjà présentes dans le backend, sans version supplémentaire à fusionner ; `composer install` et `composer dump-autoload` ont été exécutés. Les scripts Composer ont été désactivés pour contourner leur blocage dans cet environnement.
 - [x] Étape 4 : modèles métier fusionnés (champs assignables, relations et URLs d’image), tests admin alignés sur la connexion par défaut ; aucune migration métier frontend n’a été copiée.
 - [x] Étape 5 : pages publiques intégrées sous `resources/views/front/`, routes publiques nommées `front.*` ajoutées et catégories du menu partagées via le fournisseur de vues.
-- [ ] Étape 6 : routes et interfaces admin/public fusionnées, API supprimée.
+- [x] Étape 6 : routes admin séparées dans `routes/admin.php`, chargées avec le middleware `web`; sessions, rôles Spatie et `EnsureUserIsActive` conservés. Les noms restent `admin.*`; la route API de statut de compte n’a pas d’équivalent web car aucune interface admin ne l’utilisait.
 - [ ] Étape 7 : assets séparés et chemins vérifiés.
 - [ ] Étape 8 : images partagées et URLs centralisées.
 - [ ] Étape 9 : suppression complète de l’API et de Sanctum non utilisé.
