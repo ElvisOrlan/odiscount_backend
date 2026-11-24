@@ -18,17 +18,7 @@ class DashboardDatabaseTest extends TestCase
     {
         parent::setUp();
 
-        config([
-            'database.connections.odiscount' => [
-                'driver' => 'sqlite',
-                'database' => ':memory:',
-                'prefix' => '',
-                'foreign_key_constraints' => true,
-            ],
-        ]);
-        DB::purge('odiscount');
-
-        Schema::connection('odiscount')->create('categories', function (Blueprint $table): void {
+        Schema::create('categories', function (Blueprint $table): void {
             $table->id();
             $table->string('categorie');
             $table->string('slug')->unique();
@@ -37,20 +27,20 @@ class DashboardDatabaseTest extends TestCase
             $table->timestamps();
         });
 
-        Schema::connection('odiscount')->create('villes', function (Blueprint $table): void {
+        Schema::create('villes', function (Blueprint $table): void {
             $table->id();
             $table->string('ville');
             $table->timestamps();
         });
 
-        Schema::connection('odiscount')->create('communes', function (Blueprint $table): void {
+        Schema::create('communes', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('ville_id');
             $table->string('commune');
             $table->timestamps();
         });
 
-        Schema::connection('odiscount')->create('partenaires', function (Blueprint $table): void {
+        Schema::create('partenaires', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('categorie_id');
             $table->string('image_partenaire')->nullable();
@@ -72,13 +62,13 @@ class DashboardDatabaseTest extends TestCase
 
     public function test_dashboard_calculates_statistics_from_the_existing_schema(): void
     {
-        DB::connection('odiscount')->table('categories')->insert([
+        DB::table('categories')->insert([
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
             ['id' => 2, 'categorie' => 'Santé', 'slug' => 'sante', 'status' => 'active'],
             ['id' => 3, 'categorie' => 'Archives', 'slug' => 'archives', 'status' => 'inactive'],
         ]);
 
-        DB::connection('odiscount')->table('partenaires')->insert([
+        DB::table('partenaires')->insert([
             ['categorie_id' => 1, 'nom_partenaire' => 'Partenaire A', 'taux_reduction' => 10],
             ['categorie_id' => 1, 'nom_partenaire' => 'Partenaire B', 'taux_reduction' => 20],
             ['categorie_id' => 3, 'nom_partenaire' => 'Partenaire C', 'taux_reduction' => 40],
@@ -97,12 +87,12 @@ class DashboardDatabaseTest extends TestCase
 
     public function test_categories_page_lists_database_categories_and_partner_counts(): void
     {
-        DB::connection('odiscount')->table('categories')->insert([
+        DB::table('categories')->insert([
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
             ['id' => 2, 'categorie' => 'Santé', 'slug' => 'sante', 'status' => 'inactive'],
         ]);
 
-        DB::connection('odiscount')->table('partenaires')->insert([
+        DB::table('partenaires')->insert([
             ['categorie_id' => 1, 'nom_partenaire' => 'Partenaire A', 'taux_reduction' => 10],
             ['categorie_id' => 1, 'nom_partenaire' => 'Partenaire B', 'taux_reduction' => 20],
             ['categorie_id' => 2, 'nom_partenaire' => 'Partenaire C', 'taux_reduction' => 40],
@@ -125,7 +115,7 @@ class DashboardDatabaseTest extends TestCase
 
     public function test_category_switch_updates_the_existing_status_field(): void
     {
-        DB::connection('odiscount')->table('categories')->insert([
+        DB::table('categories')->insert([
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
         ]);
 
@@ -134,7 +124,7 @@ class DashboardDatabaseTest extends TestCase
 
         $this->assertSame(
             'active',
-            DB::connection('odiscount')->table('categories')->where('id', 1)->value('status')
+            DB::table('categories')->where('id', 1)->value('status')
         );
 
         $admin = $this->makeUserWithRole('Admin');
@@ -146,7 +136,7 @@ class DashboardDatabaseTest extends TestCase
 
         $this->assertSame(
             'inactive',
-            DB::connection('odiscount')->table('categories')->where('id', 1)->value('status')
+            DB::table('categories')->where('id', 1)->value('status')
         );
 
         $this->actingAs($admin)
@@ -156,23 +146,23 @@ class DashboardDatabaseTest extends TestCase
 
         $this->assertSame(
             'active',
-            DB::connection('odiscount')->table('categories')->where('id', 1)->value('status')
+            DB::table('categories')->where('id', 1)->value('status')
         );
     }
 
     public function test_partners_page_reads_real_partner_fields_and_relations(): void
     {
-        DB::connection('odiscount')->table('categories')->insert([
+        DB::table('categories')->insert([
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
             ['id' => 2, 'categorie' => 'Archives', 'slug' => 'archives', 'status' => 'inactive'],
         ]);
-        DB::connection('odiscount')->table('villes')->insert([
+        DB::table('villes')->insert([
             ['id' => 1, 'ville' => 'Abidjan'],
         ]);
-        DB::connection('odiscount')->table('communes')->insert([
+        DB::table('communes')->insert([
             ['id' => 1, 'ville_id' => 1, 'commune' => 'Cocody'],
         ]);
-        DB::connection('odiscount')->table('partenaires')->insert([
+        DB::table('partenaires')->insert([
             [
                 'categorie_id' => 1,
                 'nom_partenaire' => 'Chez Awa',
@@ -225,7 +215,7 @@ class DashboardDatabaseTest extends TestCase
 
     public function test_admin_can_create_a_partner_from_the_partners_page(): void
     {
-        DB::connection('odiscount')->table('categories')->insert([
+        DB::table('categories')->insert([
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
         ]);
 
@@ -272,7 +262,7 @@ class DashboardDatabaseTest extends TestCase
             'phone_gerant' => '0500000000',
             'activite_principale' => 'Restaurant',
             'boutique_physique' => true,
-        ], 'odiscount');
+        ]);
     }
 
     public function test_user_role_cannot_create_a_partner(): void
@@ -290,20 +280,20 @@ class DashboardDatabaseTest extends TestCase
 
     public function test_partners_page_paginates_and_preserves_search_and_category_filters(): void
     {
-        DB::connection('odiscount')->table('categories')->insert([
+        DB::table('categories')->insert([
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
             ['id' => 2, 'categorie' => 'Archives', 'slug' => 'archives', 'status' => 'inactive'],
         ]);
 
         for ($number = 1; $number <= 17; $number++) {
-            DB::connection('odiscount')->table('partenaires')->insert([
+            DB::table('partenaires')->insert([
                 'categorie_id' => 1,
                 'nom_partenaire' => sprintf('Promo partenaire %02d', $number),
                 'taux_reduction' => 10,
             ]);
         }
 
-        DB::connection('odiscount')->table('partenaires')->insert([
+        DB::table('partenaires')->insert([
             'categorie_id' => 2,
             'nom_partenaire' => 'Promo archive',
             'taux_reduction' => 5,

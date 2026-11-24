@@ -9,6 +9,8 @@ class Commune extends Model
 {
     protected $table = 'communes';
 
+    protected $fillable = ['ville_id', 'commune'];
+
     public function ville(): BelongsTo
     {
         return $this->belongsTo(Ville::class);
