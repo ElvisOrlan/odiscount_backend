@@ -55,7 +55,13 @@
                 <tr data-category="{{ $partner->categorie_id }}">
                     <td>
                         <div class="who">
-                            <div class="av">{{ mb_strtoupper(mb_substr($partner->nom_partenaire, 0, 1)) }}</div>
+                            <div class="av">
+                                @if ($partner->image_url)
+                                    <img src="{{ $partner->image_url }}" alt="">
+                                @else
+                                    {{ mb_strtoupper(mb_substr($partner->nom_partenaire, 0, 1)) }}
+                                @endif
+                            </div>
                             <div>
                                 <b>{{ $partner->nom_partenaire }}</b>
                                 @if ($partner->activite_principale)

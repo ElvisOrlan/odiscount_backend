@@ -31,7 +31,7 @@
 - [x] Étape 5 : pages publiques intégrées sous `resources/views/front/`, routes publiques nommées `front.*` ajoutées et catégories du menu partagées via le fournisseur de vues.
 - [x] Étape 6 : routes admin séparées dans `routes/admin.php`, chargées avec le middleware `web`; sessions, rôles Spatie et `EnsureUserIsActive` conservés. Les noms restent `admin.*`; la route API de statut de compte n’a pas d’équivalent web car aucune interface admin ne l’utilisait.
 - [x] Étape 7 : assets publics copiés dans `public/assets/front/css|js`, assets admin déplacés dans `public/assets/admin/css|js` ; les deux interfaces chargent leurs chemins distincts. Vite/Tailwind ne servent pas ces rendus statiques et la configuration Vite est inchangée.
-- [ ] Étape 8 : images partagées et URLs centralisées.
+- [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées dans les vues publiques et admin. L’admin ne téléverse pas encore d’images ; cette fonctionnalité n’a pas été ajoutée afin de ne pas modifier le formulaire/HTML au-delà du périmètre visuel.
 - [ ] Étape 9 : suppression complète de l’API et de Sanctum non utilisé.
 - [ ] Étape 10 : tests, routes et vérifications HTTP non destructives.
 - [ ] Étape 11 : documentation finale.
