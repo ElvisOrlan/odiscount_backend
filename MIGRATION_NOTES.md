@@ -4,7 +4,7 @@
 
 - Branche de travail : `fusion-front-back`.
 - Le frontend `odiscount_frontend` est uniquement une source de lecture et ne doit pas être modifié ni supprimé.
-- Le backend contient déjà un répertoire non suivi `public/images/`. Il est préexistant, conservé tel quel et ne doit pas être inclus dans les commits de cette fusion.
+- Le backend contenait déjà un répertoire non suivi `public/images/`. Ses 65 fichiers ont été comparés aux images suivies du frontend et sont identiques ; ils sont inclus dans la fusion comme assets nécessaires, sans modification de leur contenu.
 
 ## Étape 1 — Audit
 
