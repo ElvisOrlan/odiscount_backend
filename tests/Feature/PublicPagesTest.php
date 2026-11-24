@@ -29,6 +29,7 @@ class PublicPagesTest extends TestCase
 
         $this->get(route('front.home'))
             ->assertOk()
+            ->assertSee(asset('images/icone.png'))
             ->assertSee('Restaurants')
             ->assertSee(asset('images/categories/restos.jpg'))
             ->assertSee(route('front.categories.show', 'restaurants'))

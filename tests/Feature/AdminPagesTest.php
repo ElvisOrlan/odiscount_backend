@@ -16,6 +16,7 @@ class AdminPagesTest extends TestCase
         $this->actingAs($this->makeUserWithRole('Admin'))
             ->get('/admin')
             ->assertOk()
+            ->assertSee(asset('images/icone.png'))
             ->assertSee('Tableau de bord')
             ->assertSee('Partenaires par catégorie');
     }
@@ -28,6 +29,10 @@ class AdminPagesTest extends TestCase
 
     public function test_admin_can_log_in_with_configured_credentials(): void
     {
+        $this->get(route('admin.login'))
+            ->assertOk()
+            ->assertSee(asset('images/icone.png'));
+
         User::factory()->create([
             'email' => 'admin@example.test',
             'password' => 'correct-password',

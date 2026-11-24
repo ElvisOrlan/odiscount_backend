@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>@yield('title', 'odiscount - Les petites annonces les plus proches de chez vous')</title>
   <meta name="description" content="@yield('meta_description', 'Les petites annonces les plus proches de chez vous : resto, auto, spa-fitness, éducation, hôtels, santé, modes, optique et plus encore.')">
-  <link rel="stylesheet" href="{{ asset('assets/front/css/style.css') }}">
   <link rel="icon" href="{{ asset('images/icone.png') }}" type="image/png">
+  <link rel="stylesheet" href="{{ asset('assets/front/css/style.css') }}">
 </head>
 <body>
   <header class="topbar">
