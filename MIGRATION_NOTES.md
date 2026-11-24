@@ -26,7 +26,7 @@
 
 - [x] Étape 1 : audit rapide ; branche créée et décisions consignées.
 - [x] Étape 2 : connexion MySQL unique, `.env` et `.env.example` alignés sur `odiscount_new` ; sessions, cache et queues conservent leurs pilotes `database` et utilisent la connexion par défaut.
-- [ ] Étape 3 : dépendances frontend nécessaires intégrées au backend.
+- [x] Étape 3 : les dépendances Composer et npm utiles au frontend étaient déjà présentes dans le backend, sans version supplémentaire à fusionner ; `composer install` et `composer dump-autoload` ont été exécutés. Les scripts Composer ont été désactivés pour contourner leur blocage dans cet environnement.
 - [ ] Étape 4 : modèles fusionnés et migrations de production préservées.
 - [ ] Étape 5 : interface publique intégrée.
 - [ ] Étape 6 : routes et interfaces admin/public fusionnées, API supprimée.
