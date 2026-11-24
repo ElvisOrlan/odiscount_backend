@@ -20,6 +20,7 @@ Route::name('front.')->group(function (): void {
             ->firstOrFail();
 
         $partenaires = $category->partenaires()
+            ->where('is_active', true)
             ->with(['commune', 'ville'])
             ->orderBy('id')
             ->get();

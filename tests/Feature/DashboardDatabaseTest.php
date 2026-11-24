@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Partenaire;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -160,6 +162,8 @@ class DashboardDatabaseTest extends TestCase
             ->assertSee('0700000000')
             ->assertSee('12,5%')
             ->assertSee('category-filter')
+            ->assertSee('Modifier')
+            ->assertSee('Désactiver')
             ->assertDontSee('visibility-filter')
             ->assertDontSee('Nouvelle catégorie')
             ->assertDontSee('Modifier le partenaire');
@@ -215,6 +219,157 @@ class DashboardDatabaseTest extends TestCase
             'activite_principale' => 'Restaurant',
             'boutique_physique' => true,
         ]);
+    }
+
+    public function test_admin_can_edit_a_partner_and_keep_its_existing_image(): void
+    {
+        DB::table('categories')->insert([
+            ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
+            ['id' => 2, 'categorie' => 'Santé', 'slug' => 'sante', 'status' => 'active'],
+        ]);
+        DB::table('villes')->insert([
+            ['id' => 1, 'ville' => 'Abidjan'],
+        ]);
+        DB::table('communes')->insert([
+            ['id' => 1, 'ville_id' => 1, 'commune' => 'Cocody'],
+        ]);
+        $partner = Partenaire::create([
+            'categorie_id' => 1,
+            'nom_partenaire' => 'Ancien nom',
+            'taux_reduction' => 10,
+            'image_partenaire' => 'image-existante.jpg',
+            'is_active' => true,
+        ]);
+        $admin = $this->makeUserWithRole('Admin');
+
+        $this->actingAs($admin)
+            ->get(route('admin.partners.edit', $partner))
+            ->assertOk()
+            ->assertSee('value="Ancien nom"', false)
+            ->assertSee('image-existante.jpg');
+
+        $this->actingAs($admin)
+            ->put(route('admin.partners.update', $partner), [
+                'categorie_id' => 2,
+                'nom_partenaire' => 'Nouveau nom',
+                'taux_reduction' => 15,
+                'ville_id' => 1,
+                'commune_id' => 1,
+                'localisation' => 'Cocody centre',
+            ])
+            ->assertRedirect(route('admin.partners'))
+            ->assertSessionHas('status', 'Le partenaire « Nouveau nom » a été modifié.');
+
+        $this->assertDatabaseHas('partenaires', [
+            'id' => $partner->id,
+            'categorie_id' => 2,
+            'nom_partenaire' => 'Nouveau nom',
+            'taux_reduction' => 15,
+            'image_partenaire' => 'image-existante.jpg',
+            'ville_id' => 1,
+            'commune_id' => 1,
+            'localisation' => 'Cocody centre',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_admin_can_deactivate_and_reactivate_a_partner(): void
+    {
+        DB::table('categories')->insert([
+            ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
+        ]);
+        $partner = Partenaire::create([
+            'categorie_id' => 1,
+            'nom_partenaire' => 'Partenaire contrôlé',
+            'taux_reduction' => 10,
+            'is_active' => true,
+        ]);
+        $admin = $this->makeUserWithRole('Admin');
+
+        $this->actingAs($admin)
+            ->get('/admin/partners')
+            ->assertOk()
+            ->assertSee('Actif')
+            ->assertSee(route('admin.partners.status', $partner));
+
+        $this->actingAs($admin)
+            ->from(route('admin.partners'))
+            ->patch(route('admin.partners.status', $partner), ['active' => false])
+            ->assertRedirect(route('admin.partners'))
+            ->assertSessionHas('status', 'Le partenaire « Partenaire contrôlé » a été désactivé.');
+
+        $this->assertDatabaseHas('partenaires', [
+            'id' => $partner->id,
+            'is_active' => false,
+        ]);
+        $this->get(route('front.categories.show', 'restaurants'))
+            ->assertOk()
+            ->assertDontSee('Partenaire contrôlé');
+        $this->get('/admin/partners')
+            ->assertOk()
+            ->assertSee('Désactivé')
+            ->assertSee('Réactiver');
+
+        $this->actingAs($admin)
+            ->from(route('admin.partners'))
+            ->patch(route('admin.partners.status', $partner), ['active' => true])
+            ->assertRedirect(route('admin.partners'))
+            ->assertSessionHas('status', 'Le partenaire « Partenaire contrôlé » a été réactivé.');
+
+        $this->assertDatabaseHas('partenaires', [
+            'id' => $partner->id,
+            'is_active' => true,
+        ]);
+        $this->get(route('front.categories.show', 'restaurants'))
+            ->assertOk()
+            ->assertSee('Partenaire contrôlé');
+    }
+
+    public function test_admin_can_upload_a_partner_image_to_the_shared_public_directory(): void
+    {
+        DB::table('categories')->insert([
+            ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
+        ]);
+        $admin = $this->makeUserWithRole('Admin');
+        $storedImageName = null;
+
+        try {
+            $this->actingAs($admin)
+                ->get(route('admin.partners.create'))
+                ->assertOk()
+                ->assertSee('enctype="multipart/form-data"', false)
+                ->assertSee('name="image_partenaire"', false);
+
+            $this->actingAs($admin)
+                ->post(route('admin.partners.store'), [
+                    'categorie_id' => 1,
+                    'nom_partenaire' => 'Partenaire avec image',
+                    'taux_reduction' => 10,
+                    'image_partenaire' => UploadedFile::fake()->image('logo.png'),
+                ])
+                ->assertRedirect(route('admin.partners'));
+
+            $storedImageName = DB::table('partenaires')
+                ->where('nom_partenaire', 'Partenaire avec image')
+                ->value('image_partenaire');
+
+            $this->assertNotEmpty($storedImageName);
+            $this->assertSame(basename($storedImageName), $storedImageName);
+            $this->assertFileExists(public_path('images/partenaires/'.$storedImageName));
+
+            $partner = Partenaire::where('nom_partenaire', 'Partenaire avec image')->firstOrFail();
+            $this->assertSame(asset('images/partenaires/'.$storedImageName), $partner->image_url);
+            $this->get(route('front.categories.show', 'restaurants'))
+                ->assertOk()
+                ->assertSee($partner->image_url);
+        } finally {
+            if ($storedImageName !== null) {
+                $imagePath = public_path('images/partenaires/'.$storedImageName);
+                if (is_file($imagePath)) {
+                    unlink($imagePath);
+                }
+            }
+        }
     }
 
     public function test_user_role_cannot_create_a_partner(): void

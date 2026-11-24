@@ -43,7 +43,7 @@
     <div class="wrap">
         <table class="tbl">
             <thead>
-            <tr><th>Partenaire</th><th>Catégorie</th><th>Réduction</th><th>Offre</th><th>Localisation</th><th>Gérant</th><th>Contact</th></tr>
+            <tr><th>Partenaire</th><th>Catégorie</th><th>Réduction</th><th>Offre</th><th>Localisation</th><th>Gérant</th><th>Contact</th><th>Statut</th><th>Actions</th></tr>
             </thead>
             <tbody id="partner-rows">
             @forelse ($partners as $partner)
@@ -79,9 +79,27 @@
                     <td>{{ $location }}</td>
                     <td>{{ $partner->nom_prenom_gerant ?: '–' }}</td>
                     <td>{{ $partner->telephone ?: '–' }}</td>
+                    <td>
+                        <span class="status {{ $partner->is_active ? 'status-on' : 'status-off' }}">
+                            {{ $partner->is_active ? 'Actif' : 'Désactivé' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="act">
+                            <a class="btn sm" href="{{ route('admin.partners.edit', $partner) }}">Modifier</a>
+                            <form method="POST" action="{{ route('admin.partners.status', $partner) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="active" value="{{ $partner->is_active ? '0' : '1' }}">
+                                <button class="btn sm {{ $partner->is_active ? 'dng' : '' }}" type="submit">
+                                    {{ $partner->is_active ? 'Désactiver' : 'Réactiver' }}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="empty">Aucun partenaire ne correspond aux critères sélectionnés.</td></tr>
+                <tr><td colspan="9" class="empty">Aucun partenaire ne correspond aux critères sélectionnés.</td></tr>
             @endforelse
             </tbody>
         </table>

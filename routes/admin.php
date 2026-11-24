@@ -2,7 +2,9 @@
 
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Models\Category;
+use App\Models\Commune;
 use App\Models\Partenaire;
+use App\Models\Ville;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -61,8 +63,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
             return view('admin.partners-create', [
                 'page' => 'partners',
                 'categories' => Category::query()->orderBy('categorie')->get(['id', 'categorie', 'status']),
+                'villes' => Ville::query()->orderBy('ville')->get(['id', 'ville']),
+                'communes' => Commune::query()->with('ville:id,ville')->orderBy('commune')->get(['id', 'ville_id', 'commune']),
             ]);
         })->middleware('role:Admin|Master')->name('partners.create');
+
+        Route::get('/partners/{partner}/edit', static function (Partenaire $partner) {
+            return view('admin.partners-create', [
+                'page' => 'partners',
+                'partner' => $partner,
+                'categories' => Category::query()->orderBy('categorie')->get(['id', 'categorie', 'status']),
+                'villes' => Ville::query()->orderBy('ville')->get(['id', 'ville']),
+                'communes' => Commune::query()->with('ville:id,ville')->orderBy('commune')->get(['id', 'ville_id', 'commune']),
+            ]);
+        })->middleware('role:Admin|Master')->name('partners.edit');
 
         Route::post('/partners', static function (Request $request) {
             $validated = $request->validate([
@@ -71,6 +85,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 'taux_reduction' => ['required', 'numeric', 'min:0', 'max:100'],
                 'info_reduction' => ['nullable', 'string'],
                 'telephone' => ['nullable', 'string', 'max:30'],
+                'image_partenaire' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
                 'localisation' => ['nullable', 'string', 'max:255'],
                 'nom_prenom_gerant' => ['nullable', 'string', 'max:255'],
                 'mail_gerant' => ['nullable', 'email', 'max:255'],
@@ -81,6 +96,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             $partner = new Partenaire;
             $partner->categorie_id = $validated['categorie_id'];
+            if ($request->hasFile('image_partenaire')) {
+                $image = $request->file('image_partenaire');
+                $imageName = $image->hashName();
+                $image->move(public_path('images/partenaires'), $imageName);
+                $partner->image_partenaire = $imageName;
+            }
             $partner->nom_partenaire = $validated['nom_partenaire'];
             $partner->taux_reduction = $validated['taux_reduction'];
             $partner->info_reduction = $validated['info_reduction'] ?? null;
@@ -98,13 +119,79 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->with('status', 'Le partenaire « '.$partner->nom_partenaire.' » a été créé.');
         })->middleware('role:Admin|Master')->name('partners.store');
 
+        Route::put('/partners/{partner}', static function (Request $request, Partenaire $partner) {
+            $validated = $request->validate([
+                'categorie_id' => ['required', 'integer', Rule::exists('categories', 'id')],
+                'nom_partenaire' => ['required', 'string', 'max:255'],
+                'taux_reduction' => ['required', 'numeric', 'min:0', 'max:100'],
+                'info_reduction' => ['nullable', 'string'],
+                'telephone' => ['nullable', 'string', 'max:30'],
+                'image_partenaire' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+                'ville_id' => ['nullable', 'integer', Rule::exists('villes', 'id')],
+                'commune_id' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('communes', 'id')->where(
+                        static fn ($query) => $query->where('ville_id', $request->input('ville_id'))
+                    ),
+                ],
+                'localisation' => ['nullable', 'string', 'max:255'],
+                'nom_prenom_gerant' => ['nullable', 'string', 'max:255'],
+                'mail_gerant' => ['nullable', 'email', 'max:255'],
+                'phone_gerant' => ['nullable', 'string', 'max:30'],
+                'activite_principale' => ['nullable', 'string', 'max:255'],
+                'boutique_physique' => ['sometimes', 'boolean'],
+            ]);
+
+            if ($request->hasFile('image_partenaire')) {
+                $image = $request->file('image_partenaire');
+                $imageName = $image->hashName();
+                $image->move(public_path('images/partenaires'), $imageName);
+                $partner->image_partenaire = $imageName;
+            }
+
+            $partner->fill([
+                'categorie_id' => $validated['categorie_id'],
+                'nom_partenaire' => $validated['nom_partenaire'],
+                'taux_reduction' => $validated['taux_reduction'],
+                'info_reduction' => $validated['info_reduction'] ?? null,
+                'telephone' => $validated['telephone'] ?? null,
+                'ville_id' => $validated['ville_id'] ?? null,
+                'commune_id' => $validated['commune_id'] ?? null,
+                'localisation' => $validated['localisation'] ?? null,
+                'nom_prenom_gerant' => $validated['nom_prenom_gerant'] ?? null,
+                'mail_gerant' => $validated['mail_gerant'] ?? null,
+                'phone_gerant' => $validated['phone_gerant'] ?? null,
+                'activite_principale' => $validated['activite_principale'] ?? null,
+                'boutique_physique' => $validated['boutique_physique'] ?? false,
+            ]);
+            $partner->save();
+
+            return redirect()
+                ->route('admin.partners')
+                ->with('status', 'Le partenaire « '.$partner->nom_partenaire.' » a été modifié.');
+        })->middleware('role:Admin|Master')->name('partners.update');
+
+        Route::patch('/partners/{partner}/status', static function (Request $request, Partenaire $partner) {
+            $validated = $request->validate([
+                'active' => ['required', 'boolean'],
+            ]);
+            $partner->is_active = $validated['active'];
+            $partner->save();
+
+            $message = $partner->is_active ? 'réactivé' : 'désactivé';
+
+            return back()->with('status', 'Le partenaire « '.$partner->nom_partenaire.' » a été '.$message.'.');
+        })->middleware('role:Admin|Master')->name('partners.status');
+
         Route::get('/', static function () {
             $categories = Category::query()
-                ->withCount('partenaires')
+                ->withCount(['partenaires' => static fn ($query) => $query->where('is_active', true)])
                 ->orderBy('id')
                 ->get();
             $activeCategories = $categories->where('status', 'active');
             $activePartners = Partenaire::query()
+                ->where('is_active', true)
                 ->whereHas('categorie', static fn ($query) => $query->where('status', 'active'));
 
             return view('admin.dashboard', [
@@ -118,7 +205,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         })->name('dashboard');
         Route::get('/categories', static function () {
             $categories = Category::query()
-                ->withCount('partenaires')
+                ->withCount(['partenaires' => static fn ($query) => $query->where('is_active', true)])
                 ->orderBy('id')
                 ->get();
 

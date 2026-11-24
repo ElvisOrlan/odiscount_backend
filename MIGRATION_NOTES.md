@@ -31,7 +31,7 @@
 - [x] Étape 5 : pages publiques intégrées sous `resources/views/front/`, routes publiques nommées `front.*` ajoutées et catégories du menu partagées via le fournisseur de vues.
 - [x] Étape 6 : routes admin séparées dans `routes/admin.php`, chargées avec le middleware `web`; sessions, rôles Spatie et `EnsureUserIsActive` conservés. Les noms restent `admin.*`; la route API de statut de compte n’a pas d’équivalent web car aucune interface admin ne l’utilisait.
 - [x] Étape 7 : assets publics copiés dans `public/assets/front/css|js`, assets admin déplacés dans `public/assets/admin/css|js` ; les deux interfaces chargent leurs chemins distincts. Vite/Tailwind ne servent pas ces rendus statiques et la configuration Vite est inchangée.
-- [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées côté public et dans une donnée non visuelle admin. L’admin ne téléverse pas encore d’images ; cette fonctionnalité n’a pas été ajoutée afin de préserver le formulaire.
+- [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées côté public et dans une donnée non visuelle admin. Le téléversement d’image partenaire a été ajouté ensuite ; voir les évolutions après fusion.
 - [x] Étape 9 : routes API retirées de l’application et de `bootstrap/app.php`, tests API supprimés, trait et dépendance Sanctum retirés. La migration de `personal_access_tokens` est conservée et aucune table n’est supprimée.
 - [x] Étape 10 : `optimize:clear`, `route:list`, tests (19 réussis, 118 assertions) et smoke test HTTP complet réussis sur une base SQLite temporaire isolée, supprimée après usage. La connexion locale à MySQL `127.0.0.1:3306` a été refusée ; le schéma et les pages sur `odiscount_new` n’ont donc pas pu être vérifiés directement. Aucune commande de migration n’a visé cette base.
 - [x] Étape 11 : README remplacé par la documentation de l’application unifiée, des deux interfaces, de la configuration MySQL, des images et des consignes de déploiement.
@@ -48,3 +48,9 @@
 - Déployer les dépendances de production avec `composer install --no-dev`.
 - Vérifier les variables d’environnement et exécuter `php artisan config:cache` après configuration.
 - Ne jamais exécuter `migrate:fresh`, `migrate:refresh`, `db:wipe` ni aucune commande destructive sur `odiscount_new`.
+
+## Évolutions après la fusion
+
+- Le formulaire partenaire permet le téléversement facultatif d’images JPG, PNG ou WEBP (5 Mo maximum) vers `public/images/partenaires/` ; seul le nom généré est enregistré en base. Une modification sans nouvelle image conserve l’image actuelle.
+- La gestion des partenaires inclut la modification, la désactivation et la réactivation. Une migration additive, `2026_11_24_000004_add_is_active_to_partenaires_table`, ajoute `is_active` avec la valeur par défaut `true`; les partenaires désactivés restent visibles dans l’administration et sont masqués du site public.
+- Vérifier `php artisan migrate:status` sur la base cible avant déploiement, puis exécuter `php artisan migrate` uniquement après validation du schéma et sauvegarde. La migration n’a pas été exécutée sur `odiscount_new`.

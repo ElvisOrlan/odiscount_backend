@@ -12,6 +12,7 @@ class Partenaire extends Model
     protected $fillable = [
         'categorie_id',
         'image_partenaire',
+        'is_active',
         'nom_partenaire',
         'taux_reduction',
         'info_reduction',
@@ -25,6 +26,14 @@ class Partenaire extends Model
         'activite_principale',
         'boutique_physique',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'boutique_physique' => 'boolean',
+        ];
+    }
 
     public function categorie(): BelongsTo
     {
