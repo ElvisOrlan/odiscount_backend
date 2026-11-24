@@ -30,7 +30,7 @@
 - [x] Étape 4 : modèles métier fusionnés (champs assignables, relations et URLs d’image), tests admin alignés sur la connexion par défaut ; aucune migration métier frontend n’a été copiée.
 - [x] Étape 5 : pages publiques intégrées sous `resources/views/front/`, routes publiques nommées `front.*` ajoutées et catégories du menu partagées via le fournisseur de vues.
 - [x] Étape 6 : routes admin séparées dans `routes/admin.php`, chargées avec le middleware `web`; sessions, rôles Spatie et `EnsureUserIsActive` conservés. Les noms restent `admin.*`; la route API de statut de compte n’a pas d’équivalent web car aucune interface admin ne l’utilisait.
-- [ ] Étape 7 : assets séparés et chemins vérifiés.
+- [x] Étape 7 : assets publics copiés dans `public/assets/front/css|js`, assets admin déplacés dans `public/assets/admin/css|js` ; les deux interfaces chargent leurs chemins distincts. Vite/Tailwind ne servent pas ces rendus statiques et la configuration Vite est inchangée.
 - [ ] Étape 8 : images partagées et URLs centralisées.
 - [ ] Étape 9 : suppression complète de l’API et de Sanctum non utilisé.
 - [ ] Étape 10 : tests, routes et vérifications HTTP non destructives.

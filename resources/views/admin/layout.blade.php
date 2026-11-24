@@ -7,7 +7,7 @@
     <title>@yield('title') – odiscount administration</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/admin.css') }}">
 </head>
 <body>
 <aside class="side">
@@ -46,6 +46,6 @@
 </main>
 
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="{{ asset('js/admin.js') }}" defer></script>
+<script src="{{ asset('assets/admin/js/admin.js') }}" defer></script>
 </body>
 </html>
