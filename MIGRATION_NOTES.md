@@ -12,7 +12,7 @@
 - Le backend a une connexion métier secondaire `odiscount`, tandis que ses comptes utilisent la connexion par défaut. Le frontend utilise la connexion par défaut, configurée SQLite par défaut. La fusion fera utiliser MySQL `odiscount_new` comme connexion par défaut unique.
 - Les configurations des deux projets utilisent déjà des pilotes `database` pour sessions, cache et queues ; ils suivront la connexion MySQL unique, sans migration ni vidage de ces tables.
 - Le formulaire d’ajout de partenaire et son traitement backend ne contiennent pas de champ de téléversement et ne sauvegardent pas de nom d’image. Les rendus actuels consomment des noms de fichiers stockés en base depuis `public/images/categories/` et `public/images/partenaires/`. Les 65 fichiers d’image présents dans le frontend sont déjà présents à l’identique dans le `public/images/` local du backend ; aucune valeur en base et aucun fichier image ne seront remplacés.
-- L’interface d’administration inspectée n’appelle pas les routes `/api/*` et ne contient pas de gestion d’état de compte. Les routes API ne servent donc à aucun parcours UI actuel ; elles seront supprimées. Sanctum ne sera retiré que si aucun usage résiduel n’est trouvé. La table historique `personal_access_tokens` ne sera pas supprimée.
+- L’interface d’administration inspectée n’appelait pas les routes `/api/*` et ne contenait pas de gestion d’état de compte. L’API et Sanctum ont donc été supprimés ; la migration historique de `personal_access_tokens` est conservée et aucune table n’est supprimée.
 - Le frontend charge son CSS et JavaScript directement depuis `public/css/style.css` et `public/js/script.js`. Le backend charge ses assets admin depuis `public/css/admin.css` et `public/js/admin.js`. Les entrées Vite/Tailwind ne servent pas à ces interfaces et ne seront pas modifiées.
 
 ## Décisions d’implémentation
@@ -32,7 +32,7 @@
 - [x] Étape 6 : routes admin séparées dans `routes/admin.php`, chargées avec le middleware `web`; sessions, rôles Spatie et `EnsureUserIsActive` conservés. Les noms restent `admin.*`; la route API de statut de compte n’a pas d’équivalent web car aucune interface admin ne l’utilisait.
 - [x] Étape 7 : assets publics copiés dans `public/assets/front/css|js`, assets admin déplacés dans `public/assets/admin/css|js` ; les deux interfaces chargent leurs chemins distincts. Vite/Tailwind ne servent pas ces rendus statiques et la configuration Vite est inchangée.
 - [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées dans les vues publiques et admin. L’admin ne téléverse pas encore d’images ; cette fonctionnalité n’a pas été ajoutée afin de ne pas modifier le formulaire/HTML au-delà du périmètre visuel.
-- [ ] Étape 9 : suppression complète de l’API et de Sanctum non utilisé.
+- [x] Étape 9 : routes API retirées de l’application et de `bootstrap/app.php`, tests API supprimés, trait et dépendance Sanctum retirés. La migration de `personal_access_tokens` est conservée et aucune table n’est supprimée.
 - [ ] Étape 10 : tests, routes et vérifications HTTP non destructives.
 - [ ] Étape 11 : documentation finale.
 
