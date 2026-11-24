@@ -17,24 +17,30 @@
 
 ## Décisions d’implémentation
 
-- Les routes publiques seront nommées `front.home` et `front.categories.show`; les noms de routes admin resteront préfixés par `admin.`.
-- Le schéma métier existant fait foi. Les migrations frontend `categories`, `partenaires`, `villes` et `communes` ne seront pas ajoutées au backend et les migrations existantes ne seront pas lancées sur la base de production.
-- La construction des URLs d’image sera centralisée sur les modèles et utilisée dans les vues publiques ; les chemins de stockage et les valeurs existantes en base resteront inchangés.
+- Les routes publiques sont nommées `front.home` et `front.categories.show`; les noms de routes admin restent préfixés par `admin.`.
+- Le schéma métier existant fait foi. Quatre migrations de création métier protégées par `Schema::hasTable` permettent seulement l’installation sur une base où ces tables manquent ; elles ne modifient pas les tables préexistantes et leurs méthodes `down()` ne les suppriment pas. Aucune migration n’a été lancée sur `odiscount_new`.
+- La construction des URLs d’image est centralisée dans les modèles et utilisée côté public, ainsi que comme donnée non visuelle de la liste admin ; les chemins de stockage, le contenu HTML visible et les valeurs existantes en base restent inchangés.
 - Le formulaire de recherche factice et les autres liens visuels non implémentés resteront inchangés, conformément au périmètre.
 
 ## Journal des étapes
 
 - [x] Étape 1 : audit rapide ; branche créée et décisions consignées.
 - [x] Étape 2 : connexion MySQL unique, `.env` et `.env.example` alignés sur `odiscount_new` ; sessions, cache et queues conservent leurs pilotes `database` et utilisent la connexion par défaut.
-- [x] Étape 3 : les dépendances Composer et npm utiles au frontend étaient déjà présentes dans le backend, sans version supplémentaire à fusionner ; `composer install` et `composer dump-autoload` ont été exécutés. Les scripts Composer ont été désactivés pour contourner leur blocage dans cet environnement.
-- [x] Étape 4 : modèles métier fusionnés (champs assignables, relations et URLs d’image), tests admin alignés sur la connexion par défaut ; aucune migration métier frontend n’a été copiée.
+- [x] Étape 3 : les dépendances Composer et npm utiles au frontend étaient déjà présentes dans le backend, sans version supplémentaire à fusionner ; `composer install` et `composer dump-autoload` ont été exécutés. Après le retrait de Sanctum, `composer dump-autoload` a également régénéré le manifeste des packages.
+- [x] Étape 4 : modèles métier fusionnés (champs assignables, relations et URLs d’image), tests admin alignés sur la connexion par défaut ; les migrations frontend n’ont pas été copiées telles quelles.
 - [x] Étape 5 : pages publiques intégrées sous `resources/views/front/`, routes publiques nommées `front.*` ajoutées et catégories du menu partagées via le fournisseur de vues.
 - [x] Étape 6 : routes admin séparées dans `routes/admin.php`, chargées avec le middleware `web`; sessions, rôles Spatie et `EnsureUserIsActive` conservés. Les noms restent `admin.*`; la route API de statut de compte n’a pas d’équivalent web car aucune interface admin ne l’utilisait.
 - [x] Étape 7 : assets publics copiés dans `public/assets/front/css|js`, assets admin déplacés dans `public/assets/admin/css|js` ; les deux interfaces chargent leurs chemins distincts. Vite/Tailwind ne servent pas ces rendus statiques et la configuration Vite est inchangée.
-- [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées dans les vues publiques et admin. L’admin ne téléverse pas encore d’images ; cette fonctionnalité n’a pas été ajoutée afin de ne pas modifier le formulaire/HTML au-delà du périmètre visuel.
+- [x] Étape 8 : dossiers d’images communs conservés sous `public/images/`, URLs centralisées dans les accesseurs `image_url` et utilisées côté public et dans une donnée non visuelle admin. L’admin ne téléverse pas encore d’images ; cette fonctionnalité n’a pas été ajoutée afin de préserver le formulaire.
 - [x] Étape 9 : routes API retirées de l’application et de `bootstrap/app.php`, tests API supprimés, trait et dépendance Sanctum retirés. La migration de `personal_access_tokens` est conservée et aucune table n’est supprimée.
-- [ ] Étape 10 : tests, routes et vérifications HTTP non destructives.
+- [x] Étape 10 : `optimize:clear`, `route:list`, tests (19 réussis, 118 assertions) et smoke test HTTP complet réussis sur une base SQLite temporaire isolée, supprimée après usage. La connexion locale à MySQL `127.0.0.1:3306` a été refusée ; le schéma et les pages sur `odiscount_new` n’ont donc pas pu être vérifiés directement. Aucune commande de migration n’a visé cette base.
 - [ ] Étape 11 : documentation finale.
+
+## Vérification de l’accès MySQL
+
+- À la date de cette fusion, aucune instance MySQL ne répond à `127.0.0.1:3306` (`connection refused`). La configuration demandée a bien été posée dans le `.env` local et `.env.example`, mais l’inspection en lecture seule de `odiscount_new` n’a pas pu aboutir.
+- Les quatre migrations métier sont protégées par `Schema::hasTable` et ne touchent pas aux tables déjà présentes. Leurs méthodes `down()` ne suppriment pas les tables métier, afin qu’un rollback ne puisse pas effacer de données préexistantes.
+- Les tests HTTP des écrans ont été exécutés contre une base SQLite de test créée hors du projet et supprimée après les vérifications ; cela ne valide pas les identifiants MySQL ni le schéma de production.
 
 ## Points à surveiller en production
 

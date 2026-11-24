@@ -3,62 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class DashboardDatabaseTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Schema::create('categories', function (Blueprint $table): void {
-            $table->id();
-            $table->string('categorie');
-            $table->string('slug')->unique();
-            $table->string('image_categorie')->nullable();
-            $table->string('status')->default('active');
-            $table->timestamps();
-        });
-
-        Schema::create('villes', function (Blueprint $table): void {
-            $table->id();
-            $table->string('ville');
-            $table->timestamps();
-        });
-
-        Schema::create('communes', function (Blueprint $table): void {
-            $table->id();
-            $table->unsignedBigInteger('ville_id');
-            $table->string('commune');
-            $table->timestamps();
-        });
-
-        Schema::create('partenaires', function (Blueprint $table): void {
-            $table->id();
-            $table->unsignedBigInteger('categorie_id');
-            $table->string('image_partenaire')->nullable();
-            $table->string('nom_partenaire');
-            $table->decimal('taux_reduction', 5, 2);
-            $table->text('info_reduction')->nullable();
-            $table->string('telephone', 30)->nullable();
-            $table->unsignedBigInteger('ville_id')->nullable();
-            $table->unsignedBigInteger('commune_id')->nullable();
-            $table->string('localisation')->nullable();
-            $table->string('nom_prenom_gerant')->nullable();
-            $table->string('mail_gerant')->nullable();
-            $table->string('phone_gerant', 30)->nullable();
-            $table->string('activite_principale')->nullable();
-            $table->boolean('boutique_physique')->default(false);
-            $table->timestamps();
-        });
-    }
 
     public function test_dashboard_calculates_statistics_from_the_existing_schema(): void
     {
