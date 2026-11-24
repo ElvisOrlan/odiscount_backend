@@ -4,11 +4,16 @@ use App\Http\Middleware\EnsureUserIsActive;
 use App\Models\Category;
 use App\Models\Commune;
 use App\Models\Partenaire;
+use App\Models\User;
 use App\Models\Ville;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', static function (Request $request) {
@@ -47,6 +52,234 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             return redirect()->route('admin.login');
         })->name('logout');
+
+        Route::middleware('role:Master')->group(function () {
+            Route::get('/users', static function (Request $request) {
+                $filters = $request->validate([
+                    'q' => ['nullable', 'string', 'max:100'],
+                ]);
+                $users = User::query()
+                    ->with('roles')
+                    ->when($filters['q'] ?? null, static function ($query, $search): void {
+                        $search = '%'.$search.'%';
+                        $query->where(static function ($query) use ($search): void {
+                            $query->where('name', 'like', $search)
+                                ->orWhere('email', 'like', $search)
+                                ->orWhereHas('roles', static fn ($roleQuery) => $roleQuery->where('name', 'like', $search));
+                        });
+                    })
+                    ->orderBy('name')
+                    ->orderBy('id')
+                    ->paginate(15)
+                    ->appends($request->query());
+
+                return view('admin.users', [
+                    'page' => 'users',
+                    'users' => $users,
+                    'filters' => $filters,
+                ]);
+            })->name('users');
+
+            Route::get('/users/create', static function () {
+                return view('admin.user-form', [
+                    'page' => 'users',
+                    'roles' => Role::query()->where('guard_name', 'web')->orderBy('name')->get(),
+                ]);
+            })->name('users.create');
+
+            Route::post('/users', static function (Request $request) {
+                $validated = $request->validate([
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+                    'password' => ['required', 'string', 'min:8', 'confirmed'],
+                    'roles' => ['required', 'array', 'min:1'],
+                    'roles.*' => ['required', 'integer', 'distinct', Rule::exists('roles', 'id')->where('guard_name', 'web')],
+                ]);
+
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => Hash::make($validated['password']),
+                    'is_active' => true,
+                ]);
+                $user->syncRoles($validated['roles']);
+
+                return redirect()
+                    ->route('admin.users')
+                    ->with('status', 'Le compte « '.$user->name.' » a été créé.');
+            })->name('users.store');
+
+            Route::get('/users/{user}/edit', static function (User $user) {
+                return view('admin.user-form', [
+                    'page' => 'users',
+                    'user' => $user->load('roles'),
+                    'roles' => Role::query()->where('guard_name', 'web')->orderBy('name')->get(),
+                ]);
+            })->name('users.edit');
+
+            Route::put('/users/{user}', static function (Request $request, User $user) {
+                $validated = $request->validate([
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+                    'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+                    'roles' => ['required', 'array', 'min:1'],
+                    'roles.*' => ['required', 'integer', 'distinct', Rule::exists('roles', 'id')->where('guard_name', 'web')],
+                ]);
+                $selectedRoles = Role::query()
+                    ->where('guard_name', 'web')
+                    ->whereKey($validated['roles'])
+                    ->get();
+                $retainsMaster = $selectedRoles->contains('name', 'Master');
+                $isActiveMaster = $user->is_active && $user->hasRole('Master');
+
+                if ($user->is(Auth::user()) && $user->hasRole('Master') && ! $retainsMaster) {
+                    throw ValidationException::withMessages([
+                        'roles' => 'Vous ne pouvez pas retirer votre propre rôle Master.',
+                    ]);
+                }
+
+                return DB::transaction(static function () use ($validated, $selectedRoles, $user, $isActiveMaster, $retainsMaster) {
+                    if ($isActiveMaster && ! $retainsMaster) {
+                        $activeMasterCount = User::query()
+                            ->where('is_active', true)
+                            ->role('Master')
+                            ->lockForUpdate()
+                            ->get(['users.id'])
+                            ->count();
+
+                        if ($activeMasterCount <= 1) {
+                            throw ValidationException::withMessages([
+                                'roles' => 'Le dernier compte Master actif ne peut pas perdre ce rôle.',
+                            ]);
+                        }
+                    }
+
+                    $user->name = $validated['name'];
+                    $user->email = $validated['email'];
+                    if (! empty($validated['password'])) {
+                        $user->password = Hash::make($validated['password']);
+                    }
+                    $user->save();
+                    $user->syncRoles($selectedRoles);
+
+                    return redirect()
+                        ->route('admin.users')
+                        ->with('status', 'Le compte « '.$user->name.' » a été modifié.');
+                });
+            })->name('users.update');
+
+            Route::patch('/users/{user}/status', static function (Request $request, User $user) {
+                $validated = $request->validate([
+                    'active' => ['required', 'boolean'],
+                ]);
+
+                if (! $validated['active'] && $user->is(Auth::user())) {
+                    throw ValidationException::withMessages([
+                        'active' => 'Vous ne pouvez pas désactiver votre propre compte.',
+                    ]);
+                }
+
+                return DB::transaction(static function () use ($validated, $user) {
+                    if (! $validated['active'] && $user->is_active && $user->hasRole('Master')) {
+                        $activeMasterCount = User::query()
+                            ->where('is_active', true)
+                            ->role('Master')
+                            ->lockForUpdate()
+                            ->get(['users.id'])
+                            ->count();
+
+                        if ($activeMasterCount <= 1) {
+                            throw ValidationException::withMessages([
+                                'active' => 'Le dernier compte Master actif ne peut pas être désactivé.',
+                            ]);
+                        }
+                    }
+
+                    $user->is_active = $validated['active'];
+                    $user->save();
+                    $status = $user->is_active ? 'activé' : 'désactivé';
+
+                    return back()->with('status', 'Le compte « '.$user->name.' » a été '.$status.'.');
+                });
+            })->name('users.status');
+
+            Route::get('/roles', static function () {
+                $roles = Role::query()
+                    ->where('guard_name', 'web')
+                    ->withCount('users')
+                    ->orderBy('name')
+                    ->get();
+
+                return view('admin.roles', [
+                    'page' => 'roles',
+                    'roles' => $roles,
+                    'systemRoles' => ['Admin', 'User', 'Master'],
+                ]);
+            })->name('roles');
+
+            Route::post('/roles', static function (Request $request) {
+                $request->merge(['name' => trim((string) $request->input('name'))]);
+                $validated = $request->validate([
+                    'name' => [
+                        'required',
+                        'string',
+                        'max:100',
+                        'regex:/^[A-Za-z][A-Za-z0-9 _-]*$/',
+                        Rule::unique('roles', 'name')->where('guard_name', 'web'),
+                    ],
+                ]);
+
+                Role::create([
+                    'name' => trim($validated['name']),
+                    'guard_name' => 'web',
+                ]);
+
+                return redirect()->route('admin.roles')->with('status', 'Le rôle a été créé.');
+            })->name('roles.store');
+
+            Route::put('/roles/{role}', static function (Request $request, Role $role) {
+                abort_unless($role->guard_name === 'web', 404);
+                if (in_array($role->name, ['Admin', 'User', 'Master'], true)) {
+                    throw ValidationException::withMessages([
+                        'name' => 'Les rôles système ne peuvent pas être renommés.',
+                    ]);
+                }
+
+                $request->merge(['name' => trim((string) $request->input('name'))]);
+                $validated = $request->validate([
+                    'name' => [
+                        'required',
+                        'string',
+                        'max:100',
+                        'regex:/^[A-Za-z][A-Za-z0-9 _-]*$/',
+                        Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role->id),
+                    ],
+                ]);
+
+                $role->name = trim($validated['name']);
+                $role->save();
+
+                return redirect()->route('admin.roles')->with('status', 'Le rôle a été renommé.');
+            })->name('roles.update');
+
+            Route::delete('/roles/{role}', static function (Role $role) {
+                abort_unless($role->guard_name === 'web', 404);
+                if (in_array($role->name, ['Admin', 'User', 'Master'], true)) {
+                    throw ValidationException::withMessages([
+                        'role' => 'Les rôles système ne peuvent pas être supprimés.',
+                    ]);
+                }
+                if ($role->users()->exists()) {
+                    throw ValidationException::withMessages([
+                        'role' => 'Ce rôle est attribué à des comptes. Retirez-le d’abord de ces comptes.',
+                    ]);
+                }
+
+                $role->delete();
+
+                return redirect()->route('admin.roles')->with('status', 'Le rôle a été supprimé.');
+            })->name('roles.destroy');
+        });
 
         Route::patch('/categories/{category}/status', static function (Request $request, Category $category) {
             $validated = $request->validate([
@@ -202,7 +435,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 'averageDiscount' => (int) round((float) (clone $activePartners)->avg('taux_reduction')),
                 'emptyActiveCategoryCount' => $activeCategories->where('partenaires_count', 0)->count(),
             ]);
-        })->name('dashboard');
+        })->middleware('role:Admin|Master')->name('dashboard');
         Route::get('/categories', static function () {
             $categories = Category::query()
                 ->withCount(['partenaires' => static fn ($query) => $query->where('is_active', true)])
@@ -213,7 +446,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 'page' => 'categories',
                 'categories' => $categories,
             ]);
-        })->name('categories');
+        })->middleware('role:Admin|Master')->name('categories');
         Route::get('/partners', static function (Request $request) {
             $filters = $request->validate([
                 'q' => ['nullable', 'string', 'max:100'],
@@ -266,6 +499,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 'partners' => $partners,
                 'filters' => $filters,
             ]);
-        })->name('partners');
+        })->middleware('role:Admin|Master')->name('partners');
     });
 });

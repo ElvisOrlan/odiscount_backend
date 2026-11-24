@@ -99,3 +99,18 @@ body{display:block}
 .form-checkbox input{width:17px;height:17px;accent-color:var(--green)}
 .form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 @media (max-width:600px){.form-grid{grid-template-columns:1fr}.form-field-wide{grid-column:auto}.form-actions{flex-wrap:wrap}}
+.section-tabs{display:flex;gap:8px;margin:0 0 18px;border-bottom:1px solid var(--line)}
+.section-tab{padding:9px 13px;color:var(--mute);font-weight:600;text-decoration:none;border-bottom:2px solid transparent}
+.section-tab:hover,.section-tab.is-current{color:var(--green);border-color:var(--green)}
+.muted{color:var(--mute);font-size:13px}
+.role-options{min-width:0;margin:0;padding:14px;border:1px solid var(--line);border-radius:8px}
+.role-options legend{padding:0 6px;font-weight:700}
+.role-checkboxes{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}
+.role-create-form{max-width:900px;margin-bottom:24px}
+.role-create-form h2,.section-heading{margin:0 0 14px;font-size:18px}
+.role-create-fields{display:flex;align-items:flex-end;gap:12px}
+.role-create-fields .form-field{flex:1}
+.role-rename-form{display:flex;align-items:center;gap:8px}
+.role-rename-form input{max-width:240px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:600px){.role-create-fields{align-items:stretch;flex-direction:column}.role-rename-form{align-items:flex-start;flex-direction:column}}

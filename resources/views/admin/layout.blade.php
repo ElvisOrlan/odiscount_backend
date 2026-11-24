@@ -25,6 +25,12 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"/></svg>
         Partenaires
     </a>
+    @role('Master')
+        <a class="nav" href="{{ route('admin.users') }}" @if(in_array($page, ['users', 'roles'], true)) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M17 4a4 4 0 0 1 0 8M18 14a6 6 0 0 1 4 5v2"/></svg>
+            Utilisateurs et rôles
+        </a>
+    @endrole
     <div class="foot">
         <form method="POST" action="{{ route('admin.logout') }}">
             @csrf
