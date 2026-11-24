@@ -194,7 +194,7 @@ input:focus-visible {
   padding: 58px 16px 0;
   background:
     linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)),
-    url("../images/banniere/font01.jpg")
+    url("/images/banniere/font01.jpg")
     center / cover no-repeat;
 }
 
