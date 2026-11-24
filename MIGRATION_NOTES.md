@@ -28,7 +28,7 @@
 - [x] Étape 2 : connexion MySQL unique, `.env` et `.env.example` alignés sur `odiscount_new` ; sessions, cache et queues conservent leurs pilotes `database` et utilisent la connexion par défaut.
 - [x] Étape 3 : les dépendances Composer et npm utiles au frontend étaient déjà présentes dans le backend, sans version supplémentaire à fusionner ; `composer install` et `composer dump-autoload` ont été exécutés. Les scripts Composer ont été désactivés pour contourner leur blocage dans cet environnement.
 - [x] Étape 4 : modèles métier fusionnés (champs assignables, relations et URLs d’image), tests admin alignés sur la connexion par défaut ; aucune migration métier frontend n’a été copiée.
-- [ ] Étape 5 : interface publique intégrée.
+- [x] Étape 5 : pages publiques intégrées sous `resources/views/front/`, routes publiques nommées `front.*` ajoutées et catégories du menu partagées via le fournisseur de vues.
 - [ ] Étape 6 : routes et interfaces admin/public fusionnées, API supprimée.
 - [ ] Étape 7 : assets séparés et chemins vérifiés.
 - [ ] Étape 8 : images partagées et URLs centralisées.

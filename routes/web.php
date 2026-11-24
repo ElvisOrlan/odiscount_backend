@@ -8,8 +8,29 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 
-Route::get('/', function () {
-    return view('welcome');
+Route::name('front.')->group(function (): void {
+    Route::get('/', static function () {
+        $categories = Category::query()
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->get();
+
+        return view('front.index', compact('categories'));
+    })->name('home');
+
+    Route::get('/categories/{slug}', static function (string $slug) {
+        $category = Category::query()
+            ->where('status', 'active')
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        $partenaires = $category->partenaires()
+            ->with(['commune', 'ville'])
+            ->orderBy('id')
+            ->get();
+
+        return view('front.categories.show', compact('category', 'partenaires'));
+    })->name('categories.show');
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -70,7 +91,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::post('/partners', static function (Request $request) {
             $validated = $request->validate([
-                'categorie_id' => ['required', 'integer', Rule::exists('odiscount.categories', 'id')],
+                'categorie_id' => ['required', 'integer', Rule::exists('categories', 'id')],
                 'nom_partenaire' => ['required', 'string', 'max:255'],
                 'taux_reduction' => ['required', 'numeric', 'min:0', 'max:100'],
                 'info_reduction' => ['nullable', 'string'],
