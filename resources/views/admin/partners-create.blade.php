@@ -55,9 +55,20 @@
                 <label for="image_partenaire">Image du partenaire</label>
                 <input id="image_partenaire" name="image_partenaire" type="file" accept=".jpg,.jpeg,.png,.webp">
                 <small>Formats acceptés : JPG, PNG ou WEBP. Taille maximale : 5 Mo.</small>
-                @if ($isEditing && $partner->image_url)
-                    <small>Image actuelle : <a href="{{ $partner->image_url }}" target="_blank" rel="noopener">{{ $partner->image_partenaire }}</a></small>
-                @endif
+                <div class="partner-image-previews">
+                    @if ($isEditing && $partner->image_url)
+                        <figure class="partner-image-preview">
+                            <figcaption>Image actuelle</figcaption>
+                            <img src="{{ $partner->image_url }}" alt="Image actuelle de {{ $partner->nom_partenaire }}">
+                            <small>{{ $partner->image_partenaire }}</small>
+                        </figure>
+                    @endif
+                    <figure class="partner-image-preview" id="new-partner-image-preview" hidden>
+                        <figcaption>Nouvelle image sélectionnée</figcaption>
+                        <img id="new-partner-image-preview-img" alt="">
+                        <small id="new-partner-image-preview-name"></small>
+                    </figure>
+                </div>
                 @error('image_partenaire') <small class="field-error">{{ $message }}</small> @enderror
             </div>
 

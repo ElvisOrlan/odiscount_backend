@@ -246,6 +246,9 @@ class DashboardDatabaseTest extends TestCase
             ->get(route('admin.partners.edit', $partner))
             ->assertOk()
             ->assertSee('value="Ancien nom"', false)
+            ->assertSee('src="'.asset('images/partenaires/image-existante.jpg').'"', false)
+            ->assertSee('id="new-partner-image-preview"', false)
+            ->assertSee('Nouvelle image sélectionnée')
             ->assertSee('image-existante.jpg');
 
         $this->actingAs($admin)

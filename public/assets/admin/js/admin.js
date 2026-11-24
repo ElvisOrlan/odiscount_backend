@@ -1,6 +1,40 @@
 const toast = document.querySelector('#toast');
 let toastTimer;
 
+const partnerImageInput = document.querySelector('#image_partenaire');
+const newPartnerImagePreview = document.querySelector('#new-partner-image-preview');
+const newPartnerImagePreviewImage = document.querySelector('#new-partner-image-preview-img');
+const newPartnerImagePreviewName = document.querySelector('#new-partner-image-preview-name');
+let partnerImagePreviewUrl;
+
+partnerImageInput?.addEventListener('change', () => {
+    const [file] = partnerImageInput.files;
+
+    if (partnerImagePreviewUrl) {
+        URL.revokeObjectURL(partnerImagePreviewUrl);
+        partnerImagePreviewUrl = undefined;
+    }
+
+    if (!file) {
+        newPartnerImagePreview.hidden = true;
+        newPartnerImagePreviewImage.removeAttribute('src');
+        newPartnerImagePreviewName.textContent = '';
+        return;
+    }
+
+    partnerImagePreviewUrl = URL.createObjectURL(file);
+    newPartnerImagePreviewImage.src = partnerImagePreviewUrl;
+    newPartnerImagePreviewImage.alt = `Aperçu de ${file.name}`;
+    newPartnerImagePreviewName.textContent = file.name;
+    newPartnerImagePreview.hidden = false;
+});
+
+window.addEventListener('beforeunload', () => {
+    if (partnerImagePreviewUrl) {
+        URL.revokeObjectURL(partnerImagePreviewUrl);
+    }
+});
+
 function showToast(message) {
     toast.textContent = message;
     toast.classList.add('on');
