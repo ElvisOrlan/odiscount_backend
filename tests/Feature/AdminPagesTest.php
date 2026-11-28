@@ -14,7 +14,7 @@ class AdminPagesTest extends TestCase
     public function test_admin_pages_are_available_with_separate_navigation(): void
     {
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin')
+            ->get('/office')
             ->assertOk()
             ->assertSee(asset('images/icone.png'))
             ->assertSee('Tableau de bord')
@@ -23,7 +23,7 @@ class AdminPagesTest extends TestCase
 
     public function test_admin_pages_require_an_authenticated_session(): void
     {
-        $this->get('/admin')
+        $this->get('/office')
             ->assertRedirect(route('admin.login'));
     }
 
@@ -38,7 +38,7 @@ class AdminPagesTest extends TestCase
             'password' => 'correct-password',
         ]);
 
-        $this->post('/admin/login', [
+        $this->post('/office/login', [
             'email' => 'admin@example.test',
             'password' => 'correct-password',
         ])
@@ -55,7 +55,7 @@ class AdminPagesTest extends TestCase
             'is_active' => false,
         ]);
 
-        $this->post('/admin/login', [
+        $this->post('/office/login', [
             'email' => 'disabled@example.test',
             'password' => 'correct-password',
         ])
@@ -69,10 +69,15 @@ class AdminPagesTest extends TestCase
         $user = User::factory()->create(['is_active' => false]);
 
         $this->actingAs($user)
-            ->get('/admin')
+            ->get('/office')
             ->assertRedirect(route('admin.login'));
 
         $this->assertGuest();
+    }
+
+    public function test_old_admin_path_is_no_longer_registered(): void
+    {
+        $this->get('/admin')->assertNotFound();
     }
 
     private function makeUserWithRole(string $roleName): User

@@ -23,8 +23,19 @@
 
     <form class="tools" method="GET" action="{{ route('admin.users') }}">
         <input type="search" name="q" placeholder="Rechercher par nom, e-mail ou rôle" aria-label="Rechercher un utilisateur" value="{{ $filters['q'] ?? '' }}">
-        <button class="btn pri" type="submit">Rechercher</button>
-        @if (!empty($filters['q']))
+        <select name="role" aria-label="Filtrer par rôle">
+            <option value="">Tous les rôles</option>
+            @foreach ($roles as $role)
+                <option value="{{ $role->id }}" @selected((string) ($filters['role'] ?? '') === (string) $role->id)>{{ $role->name }}</option>
+            @endforeach
+        </select>
+        <select name="status" aria-label="Filtrer par statut">
+            <option value="">Tous les statuts</option>
+            <option value="1" @selected(($filters['status'] ?? '') === '1')>Actifs</option>
+            <option value="0" @selected(($filters['status'] ?? '') === '0')>Désactivés</option>
+        </select>
+        <button class="btn pri" type="submit">Filtrer</button>
+        @if (!empty($filters['q'] ?? null) || !empty($filters['role'] ?? null) || ($filters['status'] ?? null) !== null)
             <a class="btn" href="{{ route('admin.users') }}">Effacer</a>
         @endif
     </form>
@@ -55,13 +66,19 @@
                     <td><span class="status {{ $user->is_active ? 'status-on' : 'status-off' }}">{{ $user->is_active ? 'Actif' : 'Désactivé' }}</span></td>
                     <td>
                         <div class="act">
+                            <a class="btn sm" href="{{ route('admin.users.show', $user) }}">Consulter</a>
                             <a class="btn sm" href="{{ route('admin.users.edit', $user) }}">Modifier</a>
                             @if (auth()->id() !== $user->id)
-                                <form method="POST" action="{{ route('admin.users.status', $user) }}">
+                                <form method="POST" action="{{ route('admin.users.status', $user) }}" onsubmit="return confirm('Confirmer le changement de statut de ce compte ?')">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="active" value="{{ $user->is_active ? '0' : '1' }}">
                                     <button class="btn sm {{ $user->is_active ? 'dng' : '' }}" type="submit">{{ $user->is_active ? 'Désactiver' : 'Activer' }}</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Confirmer la suppression définitive de ce compte ?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn sm dng" type="submit">Supprimer</button>
                                 </form>
                             @else
                                 <span class="muted">Votre compte</span>

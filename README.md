@@ -23,21 +23,21 @@ Le site public lit directement les modèles Eloquent et la base MySQL par défau
 
 ### Administration
 
-- `/admin/login` : connexion par session
-- `/admin` : tableau de bord
-- `/admin/categories` : catégories et visibilité
-- `/admin/partners` : recherche, filtre et pagination des partenaires
-- `/admin/partners/create` : création d’un partenaire avec téléversement d’image facultatif
+- `/office/login` : connexion par session
+- `/office` : tableau de bord
+- `/office/categories` : catégories et visibilité
+- `/office/partners` : recherche, filtre et pagination des partenaires
+- `/office/partners/create` : création d’un partenaire avec téléversement d’image facultatif
 - Depuis la liste des partenaires : modification, désactivation et réactivation
-- `/admin/users` : gestion des comptes (réservée aux `Master`)
-- `/admin/roles` : création, renommage, attribution et suppression sécurisée des rôles personnalisés (réservée aux `Master`)
+- `/office/users` : gestion des comptes (réservée aux `Master`)
+- `/office/roles` : création, renommage, attribution et suppression sécurisée des rôles personnalisés (réservée aux `Master`)
 - Vues Blade : `resources/views/admin/`
 - Routes : `routes/admin.php`, chargées avec le middleware web
 - CSS et JavaScript : `public/assets/admin/css/admin.css`, `public/assets/admin/js/admin.js`
 
 Les contrôles de session, les rôles Spatie (`Admin`, `User`, `Master`) et le middleware `EnsureUserIsActive` sont conservés. Les catégories et partenaires sont administrés dans le même schéma MySQL que celui lu par le site public. Une création ou modification est répercutée sur la page publique de sa catégorie ; un partenaire désactivé reste dans l’administration, mais n’est plus affiché au public.
 
-La gestion des comptes permet de créer et modifier les utilisateurs, de réinitialiser leur mot de passe, d’attribuer plusieurs rôles et d’activer ou désactiver les comptes. La gestion des rôles permet de créer, renommer et supprimer les rôles personnalisés ; les rôles système `Admin`, `User` et `Master` sont protégés. Un rôle personnalisé n’accorde aucune permission automatiquement : les autorisations restent définies par les middlewares et contrôles applicatifs. Le dernier compte `Master` actif ne peut pas être désactivé ni rétrogradé.
+La gestion des comptes permet de rechercher et filtrer les utilisateurs par rôle ou statut, de consulter leur fiche, de créer ou modifier un compte, de réinitialiser son mot de passe, d’attribuer plusieurs rôles, d’activer ou désactiver un compte et de le supprimer. La gestion des utilisateurs et des rôles est réservée aux `Master`. Un `Master` ne peut pas se désactiver ou se supprimer lui-même, et le dernier compte `Master` actif ne peut pas être désactivé, supprimé ni rétrogradé. La gestion des rôles permet de créer, renommer et supprimer les rôles personnalisés ; les rôles système `Admin`, `User` et `Master` sont protégés. Un rôle personnalisé n’accorde aucune permission automatiquement : les autorisations restent définies par les middlewares et contrôles applicatifs.
 
 ## Base de données
 

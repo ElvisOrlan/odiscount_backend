@@ -29,7 +29,7 @@ class DashboardDatabaseTest extends TestCase
         ]);
 
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin')
+            ->get('/office')
             ->assertOk()
             ->assertSee('<b>2</b><span>partenaires visibles</span>', false)
             ->assertSee('<b>2</b><span>catégories visibles</span>', false)
@@ -53,7 +53,7 @@ class DashboardDatabaseTest extends TestCase
         ]);
 
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin/categories')
+            ->get('/office/categories')
             ->assertOk()
             ->assertSee('Restaurants')
             ->assertSee('/categories/restaurants')
@@ -73,7 +73,7 @@ class DashboardDatabaseTest extends TestCase
             ['id' => 1, 'categorie' => 'Restaurants', 'slug' => 'restaurants', 'status' => 'active'],
         ]);
 
-        $this->patchJson('/admin/categories/1/status', ['active' => false])
+        $this->patchJson('/office/categories/1/status', ['active' => false])
             ->assertUnauthorized();
 
         $this->assertSame(
@@ -84,7 +84,7 @@ class DashboardDatabaseTest extends TestCase
         $admin = $this->makeUserWithRole('Admin');
 
         $this->actingAs($admin)
-            ->patchJson('/admin/categories/1/status', ['active' => false])
+            ->patchJson('/office/categories/1/status', ['active' => false])
             ->assertOk()
             ->assertJson(['status' => 'inactive']);
 
@@ -94,7 +94,7 @@ class DashboardDatabaseTest extends TestCase
         );
 
         $this->actingAs($admin)
-            ->patchJson('/admin/categories/1/status', ['active' => true])
+            ->patchJson('/office/categories/1/status', ['active' => true])
             ->assertOk()
             ->assertJson(['status' => 'active']);
 
@@ -148,7 +148,7 @@ class DashboardDatabaseTest extends TestCase
         ]);
 
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin/partners')
+            ->get('/office/partners')
             ->assertOk()
             ->assertSee('Chez Awa')
             ->assertSee('Garage du Nord')
@@ -178,7 +178,7 @@ class DashboardDatabaseTest extends TestCase
         $admin = $this->makeUserWithRole('Admin');
 
         $this->actingAs($admin)
-            ->get('/admin/partners')
+            ->get('/office/partners')
             ->assertOk()
             ->assertSee('Créer un partenaire')
             ->assertSee(route('admin.partners.create'));
@@ -290,7 +290,7 @@ class DashboardDatabaseTest extends TestCase
         $admin = $this->makeUserWithRole('Admin');
 
         $this->actingAs($admin)
-            ->get('/admin/partners')
+            ->get('/office/partners')
             ->assertOk()
             ->assertSee('Actif')
             ->assertSee(route('admin.partners.status', $partner));
@@ -308,7 +308,7 @@ class DashboardDatabaseTest extends TestCase
         $this->get(route('front.categories.show', 'restaurants'))
             ->assertOk()
             ->assertDontSee('Partenaire contrôlé');
-        $this->get('/admin/partners')
+        $this->get('/office/partners')
             ->assertOk()
             ->assertSee('Désactivé')
             ->assertSee('Réactiver');
@@ -410,7 +410,7 @@ class DashboardDatabaseTest extends TestCase
         ]);
 
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin/partners?q=Promo&category=1')
+            ->get('/office/partners?q=Promo&category=1')
             ->assertOk()
             ->assertSee('Affichage de 1 à 15 sur 17 partenaires')
             ->assertSee('Promo partenaire 01')
@@ -420,7 +420,7 @@ class DashboardDatabaseTest extends TestCase
             ->assertSee('page=2');
 
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin/partners?q=Promo&category=1&page=2')
+            ->get('/office/partners?q=Promo&category=1&page=2')
             ->assertOk()
             ->assertSee('Affichage de 16 à 17 sur 17 partenaires')
             ->assertSee('Promo partenaire 16')
@@ -430,7 +430,7 @@ class DashboardDatabaseTest extends TestCase
             ->assertSee('value="Promo"', false);
 
         $this->actingAs($this->makeUserWithRole('Admin'))
-            ->get('/admin/partners?q=Promo&category=1&page=3')
+            ->get('/office/partners?q=Promo&category=1&page=3')
             ->assertRedirect(route('admin.partners', ['q' => 'Promo', 'category' => 1, 'page' => 2]));
     }
 

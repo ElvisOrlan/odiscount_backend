@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('office')->name('admin.')->group(function () {
     Route::get('/login', static function (Request $request) {
         if (Auth::check()) {
             return redirect()->route('admin.dashboard');
@@ -57,7 +57,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/users', static function (Request $request) {
                 $filters = $request->validate([
                     'q' => ['nullable', 'string', 'max:100'],
+                    'role' => ['nullable', 'integer', Rule::exists('roles', 'id')->where('guard_name', 'web')],
+                    'status' => ['nullable', Rule::in(['0', '1'])],
                 ]);
+                $roles = Role::query()->where('guard_name', 'web')->orderBy('name')->get();
                 $users = User::query()
                     ->with('roles')
                     ->when($filters['q'] ?? null, static function ($query, $search): void {
@@ -68,6 +71,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
                                 ->orWhereHas('roles', static fn ($roleQuery) => $roleQuery->where('name', 'like', $search));
                         });
                     })
+                    ->when($filters['role'] ?? null, static function ($query, $roleId): void {
+                        $query->whereHas('roles', static fn ($roleQuery) => $roleQuery->whereKey($roleId));
+                    })
+                    ->when(isset($filters['status']), static function ($query) use ($filters): void {
+                        $query->where('is_active', $filters['status'] === '1');
+                    })
                     ->orderBy('name')
                     ->orderBy('id')
                     ->paginate(15)
@@ -77,6 +86,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                     'page' => 'users',
                     'users' => $users,
                     'filters' => $filters,
+                    'roles' => $roles,
                 ]);
             })->name('users');
 
@@ -86,6 +96,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
                     'roles' => Role::query()->where('guard_name', 'web')->orderBy('name')->get(),
                 ]);
             })->name('users.create');
+
+            Route::get('/users/{user}', static function (User $user) {
+                return view('admin.user-show', [
+                    'page' => 'users',
+                    'user' => $user->load('roles'),
+                ]);
+            })->name('users.show');
 
             Route::post('/users', static function (Request $request) {
                 $validated = $request->validate([
@@ -168,9 +185,44 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 });
             })->name('users.update');
 
+            Route::delete('/users/{user}', static function (User $user) {
+                if ($user->is(Auth::user())) {
+                        throw ValidationException::withMessages([
+                            'user' => 'Vous ne pouvez pas supprimer votre propre compte.',
+                        ]);
+                }
+
+                return DB::transaction(static function () use ($user) {
+                        if ($user->is_active && $user->hasRole('Master')) {
+                            $activeMasterCount = User::query()
+                                ->where('is_active', true)
+                                ->role('Master')
+                                ->lockForUpdate()
+                                ->get(['users.id'])
+                                ->count();
+
+                            if ($activeMasterCount <= 1) {
+                                throw ValidationException::withMessages([
+                                    'user' => 'Le dernier compte Master actif ne peut pas être supprimé.',
+                                ]);
+                            }
+                        }
+
+                        $name = $user->name;
+                        $user->syncRoles([]);
+                        $user->syncPermissions([]);
+                        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+                        $user->delete();
+
+                        return redirect()
+                            ->route('admin.users')
+                            ->with('status', 'Le compte « '.$name.' » a été supprimé.');
+                });
+            })->name('users.destroy');
+
             Route::patch('/users/{user}/status', static function (Request $request, User $user) {
                 $validated = $request->validate([
-                    'active' => ['required', 'boolean'],
+                        'active' => ['required', 'boolean'],
                 ]);
 
                 if (! $validated['active'] && $user->is(Auth::user())) {

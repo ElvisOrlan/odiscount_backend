@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -50,6 +51,33 @@ class UserManagementTest extends TestCase
         $this->actingAs($user)->get(route('admin.roles'))->assertForbidden();
     }
 
+    public function test_admin_cannot_access_user_management_routes_or_actions(): void
+    {
+        $admin = $this->userWithRole('Admin');
+        $target = $this->userWithRole('User');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create'))
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->get(route('admin.users.show', $target))
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->post(route('admin.users.store'), [])
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $target), [])
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->patch(route('admin.users.status', $target), ['active' => false])
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->delete(route('admin.users.destroy', $target))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
+    }
+
     public function test_master_can_create_edit_and_assign_user_roles(): void
     {
         $master = $this->userWithRole('Master');
@@ -84,6 +112,108 @@ class UserManagementTest extends TestCase
         $this->assertSame('updated-user@example.test', $user->email);
         $this->assertSame(['Admin', 'User'], $user->getRoleNames()->sort()->values()->all());
         $this->assertTrue(Hash::check('secret-password', $user->password));
+    }
+
+    public function test_master_can_filter_and_view_users(): void
+    {
+        $master = $this->userWithRole('Master');
+        $userRole = Role::findByName('User', 'web');
+        $matchingUser = User::factory()->create([
+            'name' => 'Recherche ciblée',
+            'email' => 'matching@example.test',
+            'is_active' => false,
+        ]);
+        $matchingUser->assignRole($userRole);
+        $otherUser = User::factory()->create([
+            'name' => 'Autre compte',
+            'email' => 'other@example.test',
+        ]);
+        $otherUser->assignRole($userRole);
+
+        $this->actingAs($master)
+            ->get(route('admin.users', [
+                'q' => 'Recherche',
+                'role' => $userRole->id,
+                'status' => '0',
+            ]))
+            ->assertOk()
+            ->assertSee('matching@example.test')
+            ->assertDontSee('other@example.test')
+            ->assertSee('name="role"', false)
+            ->assertSee('name="status"', false);
+
+        $this->actingAs($master)
+            ->get(route('admin.users', ['q' => '', 'role' => '', 'status' => '']))
+            ->assertOk()
+            ->assertSee('matching@example.test')
+            ->assertSee('other@example.test');
+
+        $this->actingAs($master)
+            ->get(route('admin.users.show', $matchingUser))
+            ->assertOk()
+            ->assertSee('Recherche ciblée')
+            ->assertSee('matching@example.test')
+            ->assertSee('Désactivé')
+            ->assertSee('Supprimer');
+    }
+
+    public function test_user_creation_and_filter_inputs_are_validated(): void
+    {
+        $master = $this->userWithRole('Master');
+
+        $this->actingAs($master)
+            ->post(route('admin.users.store'), [
+                'name' => '',
+                'email' => 'invalid-email',
+                'password' => 'short',
+                'password_confirmation' => 'different',
+                'roles' => [],
+            ])
+            ->assertSessionHasErrors(['name', 'email', 'password', 'roles']);
+
+        $this->actingAs($master)
+            ->get(route('admin.users', ['status' => 'unknown']))
+            ->assertSessionHasErrors('status');
+    }
+
+    public function test_master_can_change_status_and_delete_users(): void
+    {
+        $master = $this->userWithRole('Master');
+        $user = $this->userWithRole('User');
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => 'reset-token',
+            'created_at' => now(),
+        ]);
+
+        $this->actingAs($master)
+            ->patch(route('admin.users.status', $user), ['active' => false])
+            ->assertSessionHas('status', 'Le compte « '.$user->name.' » a été désactivé.');
+        $this->assertFalse($user->fresh()->is_active);
+
+        $this->actingAs($master)
+            ->patch(route('admin.users.status', $user), ['active' => true])
+            ->assertSessionHas('status', 'Le compte « '.$user->name.' » a été activé.');
+        $this->assertTrue($user->fresh()->is_active);
+
+        $this->actingAs($master)
+            ->delete(route('admin.users.destroy', $user))
+            ->assertRedirect(route('admin.users'))
+            ->assertSessionHas('status', 'Le compte « '.$user->name.' » a été supprimé.');
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+        $this->assertDatabaseMissing('model_has_roles', [
+            'model_id' => $user->id,
+            'model_type' => User::class,
+        ]);
+
+        $otherMaster = $this->userWithRole('Master');
+        $this->actingAs($master)
+            ->delete(route('admin.users.destroy', $otherMaster))
+            ->assertRedirect(route('admin.users'));
+        $this->assertDatabaseMissing('users', ['id' => $otherMaster->id]);
+        $this->assertTrue($master->fresh()->hasRole('Master'));
     }
 
     public function test_master_can_manage_custom_roles_but_system_roles_are_protected(): void
@@ -143,6 +273,10 @@ class UserManagementTest extends TestCase
                 'roles' => [$userRole->id],
             ])
             ->assertSessionHasErrors('roles');
+
+        $this->actingAs($master)
+            ->delete(route('admin.users.destroy', $master))
+            ->assertSessionHasErrors('user');
 
         $this->assertTrue($master->fresh()->is_active);
         $this->assertTrue($master->fresh()->hasRole('Master'));
